@@ -1,9 +1,30 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { MealDay } from '../../types';
 import { mealsApi } from '../../api';
-import { TODAY, KOR_MONTHS, fmtDate, parseDate, addDays, startOfWeek, isSameDay } from '../../utils/date';
+import { TODAY, KOR_MONTHS, KOR_DAYS, fmtDate, parseDate, addDays, startOfWeek, isSameDay } from '../../utils/date';
 import Icon from '../../components/Icon/Icon';
 import styles from './MealsEdit.module.scss';
+
+// ── 유틸 ─────────────────────────────────────────────────
+
+const TODAY_WEEK = fmtDate(startOfWeek(TODAY));
+
+function generateWeeks(center: string, before = 8, after = 16): string[] {
+  const base = parseDate(center);
+  return Array.from({ length: before + after + 1 }, (_, i) =>
+    fmtDate(addDays(base, (i - before) * 7)),
+  );
+}
+
+const DAY_NAMES = ['월', '화', '수', '목', '금'];
+
+function buildEmptyWeek(weekStart: string): MealDay[] {
+  const base = parseDate(weekStart);
+  return Array.from({ length: 5 }, (_, i) => {
+    const d = addDays(base, i);
+    return { date: fmtDate(d), day: DAY_NAMES[i], weekStart, lunch: [], holiday: null };
+  });
+}
 
 // ── MenuEditor ───────────────────────────────────────────
 
@@ -16,22 +37,13 @@ const QUICK_TEMPLATES = ['쌀밥', '잡곡밥', '김치', '단무지', '요거�
 
 function MenuEditor({ menu, onChange }: MenuEditorProps) {
   const items = menu || [];
-
-  const update = (i: number, val: string) => {
-    const next = [...items];
-    next[i] = val;
-    onChange(next);
-  };
-
+  const update = (i: number, val: string) => { const n = [...items]; n[i] = val; onChange(n); };
   const add = () => onChange([...items, '']);
   const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
-
   const move = (i: number, dir: number) => {
     const j = i + dir;
     if (j < 0 || j >= items.length) return;
-    const next = [...items];
-    [next[i], next[j]] = [next[j], next[i]];
-    onChange(next);
+    const n = [...items]; [n[i], n[j]] = [n[j], n[i]]; onChange(n);
   };
 
   return (
@@ -48,14 +60,10 @@ function MenuEditor({ menu, onChange }: MenuEditorProps) {
             />
             <div className="row" style={{ gap: 2 }}>
               <button className="btn btn-icon btn-ghost" disabled={i === 0} onClick={() => move(i, -1)} title="위로">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <path d="M6 15l6-6 6 6" />
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 15l6-6 6 6" /></svg>
               </button>
               <button className="btn btn-icon btn-ghost" disabled={i === items.length - 1} onClick={() => move(i, 1)} title="아래로">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 9l6 6 6-6" /></svg>
               </button>
               <button className="btn btn-icon btn-ghost" onClick={() => remove(i)} title="삭제" style={{ color: 'var(--red)' }}>
                 <Icon name="x" size={14} />
@@ -67,18 +75,14 @@ function MenuEditor({ menu, onChange }: MenuEditorProps) {
           <div className="empty" style={{ padding: 24 }}>아직 메뉴가 없습니다.</div>
         )}
       </div>
-
       <button className={`btn ${styles.menuAddBtn}`} onClick={add}>
         <Icon name="plus" size={14} /> 메뉴 추가
       </button>
-
       <div className={styles.menuTemplates}>
         <div className="muted" style={{ fontSize: 11.5, fontWeight: 600, marginBottom: 8 }}>빠른 추가</div>
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
           {QUICK_TEMPLATES.map(t => (
-            <button key={t} className={styles.quickChip} onClick={() => onChange([...items, t])}>
-              + {t}
-            </button>
+            <button key={t} className={styles.quickChip} onClick={() => onChange([...items, t])}>+ {t}</button>
           ))}
         </div>
       </div>
@@ -89,56 +93,57 @@ function MenuEditor({ menu, onChange }: MenuEditorProps) {
 // ── MealsEdit ────────────────────────────────────────────
 
 function MealsEdit() {
-  const [weekKeys, setWeekKeys] = useState<string[]>([]);
-  const [idx, setIdx] = useState(0);
+  // DB에 존재하는 주 목록 (표시용)
+  const [existingWeeks, setExistingWeeks] = useState<Set<string>>(new Set());
+
+  // 고정 탐색 범위: TODAY_WEEK 기준 8주 전 ~ 16주 후
+  const allWeeks = useMemo(() => generateWeeks(TODAY_WEEK, 8, 16), []);
+  const todayIdx = useMemo(() => allWeeks.indexOf(TODAY_WEEK), [allWeeks]);
+
+  const [idx, setIdx] = useState(todayIdx);
   const [draft, setDraft] = useState<MealDay[]>([]);
   const [activeDay, setActiveDay] = useState(0);
+  const [isNew, setIsNew] = useState(false);   // 현재 주가 DB에 없는 신규 여부
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [loadingWeeks, setLoadingWeeks] = useState(true);
   const [loadingWeek, setLoadingWeek] = useState(false);
-  const [error, setError] = useState('');
+  const [saveError, setSaveError] = useState('');
 
-  const todayWeekKey = fmtDate(startOfWeek(TODAY));
-
-  // 주 목록 로드
+  // 존재하는 주 목록 초기 로드
   useEffect(() => {
-    setLoadingWeeks(true);
-    mealsApi.getWeeks()
-      .then((keys) => {
-        setWeekKeys(keys);
-        const i = Math.max(0, keys.indexOf(todayWeekKey));
-        setIdx(i);
-      })
-      .catch(() => setError('데이터를 불러오지 못했습니다.'))
-      .finally(() => setLoadingWeeks(false));
-  }, [todayWeekKey]);
-
-  // 주 데이터 로드 → draft 초기화
-  const loadWeek = useCallback((weekStart: string) => {
-    setLoadingWeek(true);
-    setError('');
-    setDirty(false);
-    setSaved(false);
-    mealsApi.getWeek(weekStart)
-      .then((days) => {
-        setDraft(JSON.parse(JSON.stringify(days)));
-        setActiveDay(0);
-      })
-      .catch(() => setError('식단 데이터를 불러오지 못했습니다.'))
-      .finally(() => setLoadingWeek(false));
+    mealsApi.getWeeks().then(keys => setExistingWeeks(new Set(keys)));
   }, []);
 
+  // 주 이동 시 데이터 로드 or 빈 템플릿
+  const loadWeek = useCallback((weekStart: string) => {
+    setDirty(false);
+    setSaved(false);
+    setSaveError('');
+    setActiveDay(0);
+
+    if (existingWeeks.has(weekStart)) {
+      setLoadingWeek(true);
+      mealsApi.getWeek(weekStart)
+        .then(days => {
+          // API 응답에 weekStart 보강
+          setDraft(days.map(d => ({ ...d, weekStart })));
+          setIsNew(false);
+        })
+        .catch(() => {})
+        .finally(() => setLoadingWeek(false));
+    } else {
+      setDraft(buildEmptyWeek(weekStart));
+      setIsNew(true);
+    }
+  }, [existingWeeks]);
+
   useEffect(() => {
-    if (weekKeys[idx]) loadWeek(weekKeys[idx]);
-  }, [idx, weekKeys, loadWeek]);
+    if (allWeeks[idx]) loadWeek(allWeeks[idx]);
+  }, [idx, allWeeks, loadWeek]);
 
-  const todayInitialIdx = weekKeys.length > 0
-    ? Math.max(0, weekKeys.indexOf(todayWeekKey))
-    : 0;
-
-  const start = weekKeys[idx] ? parseDate(weekKeys[idx]) : new Date();
+  const currentWeekStart = allWeeks[idx];
+  const start = parseDate(currentWeekStart);
   const end = addDays(start, 4);
   const day = draft[activeDay];
 
@@ -158,26 +163,25 @@ function MealsEdit() {
 
   const handleSave = async () => {
     setSaving(true);
-    setError('');
+    setSaveError('');
     try {
       await mealsApi.saveWeek(draft);
       setDirty(false);
       setSaved(true);
       setTimeout(() => setSaved(false), 2400);
+      // 신규 저장 시 existingWeeks 갱신
+      if (isNew) {
+        setExistingWeeks(prev => new Set(Array.from(prev).concat(currentWeekStart)));
+        setIsNew(false);
+      }
     } catch {
-      setError('저장에 실패했습니다. 다시 시도해주세요.');
+      setSaveError('저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleReset = () => {
-    if (weekKeys[idx]) loadWeek(weekKeys[idx]);
-  };
-
-  if (loadingWeeks) {
-    return <div className={styles.content}><div style={{ padding: 60, textAlign: 'center', color: 'var(--text-3)' }}>불러오는 중...</div></div>;
-  }
+  const handleReset = () => loadWeek(currentWeekStart);
 
   return (
     <div className={styles.content}>
@@ -187,33 +191,34 @@ function MealsEdit() {
           <div className={`${styles.weekTitle} tnum`}>
             {start.getFullYear()}년 {start.getMonth() + 1}월 {start.getDate()}일 ~ {end.getMonth() + 1}월 {end.getDate()}일
           </div>
+          {isNew && (
+            <span className="chip chip-event" style={{ fontSize: 11, alignSelf: 'center' }}>새 식단</span>
+          )}
           <div className="row" style={{ gap: 2 }}>
-            <button className="btn btn-icon btn-ghost" disabled={idx === 0} onClick={() => setIdx(Math.max(0, idx - 1))}>
+            <button className="btn btn-icon btn-ghost" disabled={idx === 0} onClick={() => setIdx(i => i - 1)}>
               <Icon name="chevron-left" />
             </button>
-            <button className="btn btn-ghost" onClick={() => setIdx(todayInitialIdx)} style={{ padding: '6px 10px' }}>
+            <button className="btn btn-ghost" onClick={() => setIdx(todayIdx)} style={{ padding: '6px 10px' }}>
               이번 주
             </button>
-            <button className="btn btn-icon btn-ghost" disabled={idx === weekKeys.length - 1} onClick={() => setIdx(Math.min(weekKeys.length - 1, idx + 1))}>
+            <button className="btn btn-icon btn-ghost" disabled={idx === allWeeks.length - 1} onClick={() => setIdx(i => i + 1)}>
               <Icon name="chevron-right" />
             </button>
           </div>
         </div>
         <div className="row" style={{ gap: 8 }}>
-          {error && <span style={{ fontSize: 12, color: 'var(--red)' }}>{error}</span>}
+          {saveError && <span style={{ fontSize: 12, color: 'var(--red)' }}>{saveError}</span>}
           {saved && (
             <span className="row" style={{ gap: 4, color: 'var(--green)', fontSize: 12.5, fontWeight: 600 }}>
-              <Icon name="check" size={14} /> 저장되었습니다
+              <Icon name="check" size={14} /> {isNew ? '등록되었습니다' : '저장되었습니다'}
             </span>
           )}
-          {dirty && !saved && (
-            <span className={styles.unsaved}>저장되지 않은 변경사항</span>
-          )}
+          {dirty && !saved && <span className={styles.unsaved}>저장되지 않은 변경사항</span>}
           <button className="btn" onClick={handleReset} disabled={!dirty || saving}>되돌리기</button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={!dirty || saving}>
+          <button className="btn btn-primary" onClick={handleSave} disabled={(!dirty && !isNew) || saving}>
             {saving
-              ? <><span style={{ width: 13, height: 13, border: '2px solid rgba(31,29,23,.2)', borderTopColor: 'var(--text-on-brand)', borderRadius: '50%', animation: 'spin 0.6s linear infinite', display: 'inline-block' }} /> 저장 중...</>
-              : <><Icon name="check" size={14} /> 저장 및 게시</>
+              ? <><Spinner /> 저장 중...</>
+              : <><Icon name="check" size={14} /> {isNew ? '등록 및 게시' : '저장 및 게시'}</>
             }
           </button>
         </div>
@@ -346,6 +351,16 @@ function MealsEdit() {
         </>
       )}
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <span style={{
+      width: 13, height: 13, border: '2px solid rgba(31,29,23,.2)',
+      borderTopColor: 'var(--text-on-brand)', borderRadius: '50%',
+      animation: 'spin 0.6s linear infinite', display: 'inline-block',
+    }} />
   );
 }
 

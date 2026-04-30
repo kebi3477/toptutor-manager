@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MealDay } from './meal.entity';
@@ -87,12 +87,26 @@ export class MealsService implements OnModuleInit {
   }
 
   async updateDay(date: string, dto: UpdateMealDayDto): Promise<MealDay> {
-    const day = await this.repo.findOneBy({ date });
-    if (!day) throw new NotFoundException(`식단 데이터가 없습니다: ${date}`);
+    let record = await this.repo.findOneBy({ date });
 
-    if (dto.lunch !== undefined) day.lunch = dto.lunch;
-    if (dto.holiday !== undefined) day.holiday = dto.holiday ?? null;
+    if (!record) {
+      if (!dto.weekStart || !dto.day) {
+        throw new BadRequestException(
+          '신규 날짜 등록 시 weekStart와 day 필드가 필요합니다.',
+        );
+      }
+      record = this.repo.create({
+        date,
+        weekStart: dto.weekStart,
+        day: dto.day,
+        lunch: null,
+        holiday: null,
+      });
+    }
 
-    return this.repo.save(day);
+    if (dto.lunch !== undefined) record.lunch = dto.lunch;
+    if (dto.holiday !== undefined) record.holiday = dto.holiday ?? null;
+
+    return this.repo.save(record);
   }
 }

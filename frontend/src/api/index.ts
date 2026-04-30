@@ -37,7 +37,12 @@ export const mealsApi = {
       days.map((d) =>
         request<MealDay>(`/meals/${d.date}`, {
           method: 'PUT',
-          body: JSON.stringify({ lunch: d.lunch, holiday: d.holiday ?? null }),
+          body: JSON.stringify({
+            weekStart: d.weekStart,
+            day: d.day,
+            lunch: d.lunch,
+            holiday: d.holiday ?? null,
+          }),
         }),
       ),
     ),

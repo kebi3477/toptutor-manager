@@ -36,6 +36,7 @@ export interface PersonalEvent {
 export interface MealDay {
   date: string;
   day: string;
+  weekStart?: string;
   breakfast?: string[] | null;
   lunch: string[] | null;
   holiday?: string | null;
