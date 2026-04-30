@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PageId } from './types';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import Sidebar from './layouts/Sidebar/Sidebar';
 import Topbar from './layouts/Topbar/Topbar';
 import Dashboard from './pages/Dashboard/Dashboard';
@@ -11,90 +11,74 @@ import MealsEdit from './pages/MealsEdit/MealsEdit';
 import LoginPage from './pages/Login/LoginPage';
 import SignupPage from './pages/Signup/SignupPage';
 import Icon from './components/Icon/Icon';
+import { AppProvider, useAppContext } from './context/AppContext';
 import styles from './App.module.scss';
 
-const PAGE_META: Record<PageId, { title: string; sub?: string }> = {
-  dashboard: { title: '대시보드', sub: '오늘의 현황을 한눈에' },
-  calendar: { title: '캘린더', sub: '회사 일정 & 개인 휴가' },
-  meals: { title: '식단표', sub: '4층 구내식당' },
-  teams: { title: '팀 관리', sub: '팀 구성 및 팀원 관리' },
-  users: { title: '사용자 관리', sub: '전체 임직원 관리' },
-  'meals-edit': { title: '식단표 등록', sub: '주간 식단 등록 및 편집' },
+// ── Page metadata keyed by pathname ─────────────────────────────────────────
+
+const PAGE_META: Record<string, { title: string; sub?: string }> = {
+  '/dashboard': { title: '대시보드', sub: '오늘의 현황을 한눈에' },
+  '/calendar':  { title: '캘린더',   sub: '회사 일정 & 개인 휴가' },
+  '/meals':     { title: '식단표',   sub: '4층 구내식당' },
+  '/teams':     { title: '팀 관리',  sub: '팀 구성 및 팀원 관리' },
+  '/users':     { title: '사용자 관리', sub: '전체 임직원 관리' },
+  '/meals-edit':{ title: '식단표 등록', sub: '주간 식단 등록 및 편집' },
 };
 
-type AuthState = 'login' | 'signup' | 'app';
+// ── Auth guard ───────────────────────────────────────────────────────────────
 
-function App() {
-  const [auth, setAuth] = useState<AuthState>('login');
-  const [page, setPage] = useState<PageId>('dashboard');
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showCreateEvent, setShowCreateEvent] = useState(false);
+function PrivateRoute({ isLoggedIn }: { isLoggedIn: boolean }) {
+  return isLoggedIn ? <Outlet /> : <Navigate to="/" replace />;
+}
 
-  if (auth === 'login') {
-    return <LoginPage onLogin={() => setAuth('app')} onGoSignup={() => setAuth('signup')} />;
-  }
-  if (auth === 'signup') {
-    return <SignupPage onSignup={() => setAuth('app')} onGoLogin={() => setAuth('login')} />;
-  }
+function PublicRoute({ isLoggedIn }: { isLoggedIn: boolean }) {
+  return isLoggedIn ? <Navigate to="/dashboard" replace /> : <Outlet />;
+}
 
-  const meta = PAGE_META[page];
+// ── App shell (sidebar + topbar + page) ─────────────────────────────────────
 
-  const topbarActions = page === 'dashboard' || page === 'calendar' ? (
-    <button className="btn btn-primary" onClick={() => setShowCreateEvent(true)}>
-      <Icon name="plus" size={14} /> 일정 등록
-    </button>
-  ) : undefined;
+function AppShell() {
+  const location = useLocation();
+  const { isAdmin, setIsAdmin, showCreateEvent, setShowCreateEvent } = useAppContext();
+
+  const meta = PAGE_META[location.pathname] ?? { title: '' };
+  const isCalendarish = location.pathname === '/dashboard' || location.pathname === '/calendar';
 
   const adminToggle = (
     <button
       className={`btn ${isAdmin ? 'btn-primary' : ''}`}
-      onClick={() => setIsAdmin(v => !v)}
+      onClick={() => setIsAdmin(!isAdmin)}
       style={{ fontSize: 12 }}
     >
       {isAdmin ? '관리자 모드 ON' : '관리자 모드 OFF'}
     </button>
   );
 
-  function renderPage() {
-    switch (page) {
-      case 'dashboard':
-        return <Dashboard isAdmin={isAdmin} onCreateEvent={() => setShowCreateEvent(true)} />;
-      case 'calendar':
-        return <CalendarPage isAdmin={isAdmin} onCreateEvent={() => setShowCreateEvent(true)} />;
-      case 'meals':
-        return <MealsPage isAdmin={isAdmin} />;
-      case 'teams':
-        return isAdmin ? <TeamsAdmin /> : <PlaceholderPage title="팀 관리" sub="관리자만 접근할 수 있습니다." icon="folder" />;
-      case 'users':
-        return isAdmin ? <UsersAdmin /> : <PlaceholderPage title="사용자 관리" sub="관리자만 접근할 수 있습니다." icon="users" />;
-      case 'meals-edit':
-        return isAdmin ? <MealsEdit /> : <PlaceholderPage title="식단표 등록" sub="관리자만 접근할 수 있습니다." icon="edit" />;
-      default:
-        return null;
-    }
-  }
+  const topbarActions = (
+    <div className="row" style={{ gap: 8 }}>
+      {adminToggle}
+      {isCalendarish && (
+        <button className="btn btn-primary" onClick={() => setShowCreateEvent(true)}>
+          <Icon name="plus" size={14} /> 일정 등록
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div className={styles.app}>
-      <Sidebar page={page} setPage={setPage} isAdmin={isAdmin} />
+      <Sidebar isAdmin={isAdmin} />
       <div className={styles.main}>
-        <Topbar
-          title={meta.title}
-          sub={meta.sub}
-          actions={
-            <div className="row" style={{ gap: 8 }}>
-              {adminToggle}
-              {topbarActions}
-            </div>
-          }
-        />
+        <Topbar title={meta.title} sub={meta.sub} actions={topbarActions} />
         <div className={styles.pageWrapper}>
-          {renderPage()}
+          <Outlet context={{ isAdmin, showCreateEvent, setShowCreateEvent }} />
         </div>
       </div>
     </div>
   );
 }
+
+// ── Placeholder for unauthorized pages ───────────────────────────────────────
 
 function PlaceholderPage({ title, sub, icon }: { title: string; sub: string; icon: 'folder' | 'users' | 'edit' }) {
   return (
@@ -105,6 +89,98 @@ function PlaceholderPage({ title, sub, icon }: { title: string; sub: string; ico
       <div className={styles.placeholderTitle}>{title}</div>
       <div className={styles.placeholderSub}>{sub}</div>
     </div>
+  );
+}
+
+// ── Page wrappers (pulls context from Outlet) ─────────────────────────────────
+
+type ShellContext = { isAdmin: boolean; showCreateEvent: boolean; setShowCreateEvent: (v: boolean) => void };
+
+function DashboardPage() {
+  const { isAdmin, showCreateEvent, setShowCreateEvent } = useOutletContext<ShellContext>();
+  return <Dashboard isAdmin={isAdmin} onCreateEvent={() => setShowCreateEvent(true)} />;
+}
+
+function CalendarRoutePage() {
+  const { isAdmin, showCreateEvent, setShowCreateEvent } = useOutletContext<ShellContext>();
+  return <CalendarPage isAdmin={isAdmin} onCreateEvent={() => setShowCreateEvent(true)} />;
+}
+
+function MealsRoutePage() {
+  const { isAdmin } = useOutletContext<ShellContext>();
+  return <MealsPage isAdmin={isAdmin} />;
+}
+
+function TeamsRoutePage() {
+  const { isAdmin } = useOutletContext<ShellContext>();
+  return isAdmin
+    ? <TeamsAdmin />
+    : <PlaceholderPage title="팀 관리" sub="관리자만 접근할 수 있습니다." icon="folder" />;
+}
+
+function UsersRoutePage() {
+  const { isAdmin } = useOutletContext<ShellContext>();
+  return isAdmin
+    ? <UsersAdmin />
+    : <PlaceholderPage title="사용자 관리" sub="관리자만 접근할 수 있습니다." icon="users" />;
+}
+
+function MealsEditRoutePage() {
+  const { isAdmin } = useOutletContext<ShellContext>();
+  return isAdmin
+    ? <MealsEdit />
+    : <PlaceholderPage title="식단표 등록" sub="관리자만 접근할 수 있습니다." icon="edit" />;
+}
+
+// ── Root ─────────────────────────────────────────────────────────────────────
+
+function AppRoutes() {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('auth') === 'true');
+  const navigate = useNavigate();
+
+  const handleLogin = () => {
+    localStorage.setItem('auth', 'true');
+    setIsLoggedIn(true);
+    navigate('/dashboard', { replace: true });
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth');
+    setIsLoggedIn(false);
+    navigate('/', { replace: true });
+  };
+
+  return (
+    <Routes>
+      {/* Public routes — redirect to /dashboard if already logged in */}
+      <Route element={<PublicRoute isLoggedIn={isLoggedIn} />}>
+        <Route path="/" element={<LoginPage onLogin={handleLogin} onGoSignup={() => navigate('/signup')} />} />
+        <Route path="/signup" element={<SignupPage onSignup={handleLogin} onGoLogin={() => navigate('/')} />} />
+      </Route>
+
+      {/* Protected routes */}
+      <Route element={<PrivateRoute isLoggedIn={isLoggedIn} />}>
+        <Route element={<AppShell />}>
+          <Route path="/dashboard"  element={<DashboardPage />} />
+          <Route path="/calendar"   element={<CalendarRoutePage />} />
+          <Route path="/meals"      element={<MealsRoutePage />} />
+          <Route path="/teams"      element={<TeamsRoutePage />} />
+          <Route path="/users"      element={<UsersRoutePage />} />
+          <Route path="/meals-edit" element={<MealsEditRoutePage />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+      </Route>
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppProvider>
+        <AppRoutes />
+      </AppProvider>
+    </BrowserRouter>
   );
 }
 

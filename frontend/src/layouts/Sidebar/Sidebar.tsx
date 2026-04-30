@@ -1,35 +1,32 @@
-import React from 'react';
-import { PageId } from '../../types';
+import { NavLink } from 'react-router-dom';
 import { getTeam, ME, ADMIN } from '../../data';
 import { todaysLeaves } from '../../utils/date';
 import Icon from '../../components/Icon/Icon';
 import styles from './Sidebar.module.scss';
 
 interface NavItem {
-  id: PageId;
+  path: string;
   label: string;
   icon: 'home' | 'calendar' | 'meal' | 'folder' | 'users' | 'edit';
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard', label: '대시보드', icon: 'home' },
-  { id: 'calendar', label: '캘린더', icon: 'calendar' },
-  { id: 'meals', label: '식단표', icon: 'meal' },
+  { path: '/dashboard', label: '대시보드', icon: 'home' },
+  { path: '/calendar',  label: '캘린더',   icon: 'calendar' },
+  { path: '/meals',     label: '식단표',   icon: 'meal' },
 ];
 
 const ADMIN_ITEMS: NavItem[] = [
-  { id: 'teams', label: '팀 관리', icon: 'folder' },
-  { id: 'users', label: '사용자 관리', icon: 'users' },
-  { id: 'meals-edit', label: '식단표 등록', icon: 'edit' },
+  { path: '/teams',      label: '팀 관리',     icon: 'folder' },
+  { path: '/users',      label: '사용자 관리', icon: 'users' },
+  { path: '/meals-edit', label: '식단표 등록', icon: 'edit' },
 ];
 
 interface SidebarProps {
-  page: PageId;
-  setPage: (page: PageId) => void;
   isAdmin: boolean;
 }
 
-function Sidebar({ page, setPage, isAdmin }: SidebarProps) {
+function Sidebar({ isAdmin }: SidebarProps) {
   const me = isAdmin ? ADMIN : ME;
   const myTeam = getTeam(me.team);
   const leaveCount = todaysLeaves().length;
@@ -47,17 +44,17 @@ function Sidebar({ page, setPage, isAdmin }: SidebarProps) {
       <div className={styles.sectionLabel}>메뉴</div>
 
       {NAV_ITEMS.map(item => (
-        <div
-          key={item.id}
-          className={`${styles.item} ${page === item.id ? styles.active : ''}`}
-          onClick={() => setPage(item.id)}
+        <NavLink
+          key={item.path}
+          to={item.path}
+          className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ''}`}
         >
           <span className={styles.itemIcon}><Icon name={item.icon} size={17} /></span>
           {item.label}
-          {item.id === 'dashboard' && leaveCount > 0 && (
+          {item.path === '/dashboard' && leaveCount > 0 && (
             <span className={styles.badge}>{leaveCount}</span>
           )}
-        </div>
+        </NavLink>
       ))}
 
       {isAdmin && (
@@ -67,14 +64,14 @@ function Sidebar({ page, setPage, isAdmin }: SidebarProps) {
             <span className="admin-pill">ADMIN</span>
           </div>
           {ADMIN_ITEMS.map(item => (
-            <div
-              key={item.id}
-              className={`${styles.item} ${page === item.id ? styles.active : ''}`}
-              onClick={() => setPage(item.id)}
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ''}`}
             >
               <span className={styles.itemIcon}><Icon name={item.icon} size={17} /></span>
               {item.label}
-            </div>
+            </NavLink>
           ))}
         </>
       )}
