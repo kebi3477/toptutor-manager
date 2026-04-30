@@ -65,6 +65,7 @@
   cursor: pointer;
   border: 1px solid transparent;
   transition: background 0.12s, color 0.12s;
+  text-decoration: none;
 
   &:hover {
     background: rgba(0, 0, 0, 0.03);

@@ -1,5 +1,7 @@
-import React from 'react';
-import { COMPANY_EVENTS, MEALS, MEMBERS, getMember, getTeam } from '../../data';
+import React, { useState, useEffect } from 'react';
+import { COMPANY_EVENTS, MEMBERS, getMember, getTeam } from '../../data';
+import { MealDay } from '../../types';
+import { mealsApi } from '../../api';
 import { TODAY, KOR_MONTHS, KOR_DAYS, fmtDate, parseDate, addDays, startOfWeek, isSameDay, dateInRange, daysBetween, todaysLeaves } from '../../utils/date';
 import Avatar from '../../components/Avatar/Avatar';
 import Icon from '../../components/Icon/Icon';
@@ -23,6 +25,7 @@ function Dashboard({ isAdmin, onCreateEvent }: DashboardProps) {
 
   const weekStart = startOfWeek(today);
   const weekEnd = addDays(weekStart, 6);
+  const weekMealsKey = fmtDate(weekStart);
 
   const upcoming = COMPANY_EVENTS
     .filter(e => {
@@ -32,8 +35,16 @@ function Dashboard({ isAdmin, onCreateEvent }: DashboardProps) {
     .sort((a, b) => parseDate(a.startDate || a.date!).getTime() - parseDate(b.startDate || b.date!).getTime())
     .slice(0, 5);
 
-  const weekMealsKey = fmtDate(weekStart);
-  const weekMeals = MEALS[weekMealsKey] || MEALS['2026-04-27'];
+  const [weekMeals, setWeekMeals] = useState<MealDay[]>([]);
+  const [mealsLoading, setMealsLoading] = useState(true);
+
+  useEffect(() => {
+    setMealsLoading(true);
+    mealsApi.getWeek(weekMealsKey)
+      .then(setWeekMeals)
+      .catch(() => {})
+      .finally(() => setMealsLoading(false));
+  }, [weekMealsKey]);
 
   return (
     <div className={styles.content}>
@@ -181,6 +192,11 @@ function Dashboard({ isAdmin, onCreateEvent }: DashboardProps) {
             </div>
           </div>
           <div className="card-bd">
+            {mealsLoading ? (
+              <div className="empty">불러오는 중...</div>
+            ) : weekMeals.length === 0 ? (
+              <div className="empty">이번 주 식단 정보가 없습니다.</div>
+            ) : (
             <div className={styles.mealWeek}>
               {weekMeals.map(m => {
                 const d = parseDate(m.date);
@@ -202,6 +218,7 @@ function Dashboard({ isAdmin, onCreateEvent }: DashboardProps) {
                 );
               })}
             </div>
+            )}
           </div>
         </div>
       </div>

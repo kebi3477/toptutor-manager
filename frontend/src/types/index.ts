@@ -36,9 +36,9 @@ export interface PersonalEvent {
 export interface MealDay {
   date: string;
   day: string;
-  breakfast: string[] | null;
+  breakfast?: string[] | null;
   lunch: string[] | null;
-  holiday?: string;
+  holiday?: string | null;
 }
 
 export type MealWeek = MealDay[];
