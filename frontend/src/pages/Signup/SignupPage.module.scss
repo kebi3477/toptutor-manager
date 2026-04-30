@@ -1,0 +1,306 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  padding: 40px 44px 36px;
+  width: 100%;
+  max-width: 460px;
+}
+
+/* ── Brand ─────────────────────────────── */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.brandLogo {
+  width: 36px;
+  height: 36px;
+  background: var(--brand);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: var(--text-on-brand);
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+/* ── Step indicator ─────────────────────── */
+
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 6px;
+}
+
+.stepDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 2px solid var(--border-strong);
+  color: var(--text-3);
+  font-size: 11.5px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.stepDotActive {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--text-on-brand);
+}
+
+.stepDotDone {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.stepLine {
+  flex: 1;
+  height: 2px;
+  background: var(--border-strong);
+  transition: background 0.2s;
+}
+
+.stepLineDone {
+  background: var(--green);
+}
+
+.stepLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+/* ── Head ──────────────────────────────── */
+
+.head {
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 6px;
+  color: var(--text);
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--text-3);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Form ──────────────────────────────── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pwWrap {
+  position: relative;
+}
+
+.pwInput {
+  width: 100%;
+  padding-right: 40px !important;
+}
+
+.pwToggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--text-3);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+
+  &:hover { color: var(--text-2); }
+}
+
+.codeInput {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3em !important;
+  text-align: center;
+  font-family: var(--mono) !important;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--red);
+  background: var(--red-soft);
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+}
+
+.resendRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.resendBtn {
+  appearance: none;
+  background: none;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brand-strong);
+  cursor: pointer;
+  padding: 2px 4px;
+
+  &:hover:not(:disabled) { color: var(--brand); text-decoration: underline; }
+  &:disabled { color: var(--text-4); cursor: default; }
+}
+
+.mockNote {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-3);
+  background: var(--surface-2);
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+}
+
+/* ── Team grid ─────────────────────────── */
+
+.teamGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.teamChip {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.1s;
+  text-align: left;
+
+  &:hover {
+    background: var(--surface-2);
+    border-color: var(--border-strong);
+  }
+}
+
+.teamChipActive {
+  border-color: var(--team-color, var(--brand));
+  background: color-mix(in srgb, var(--team-color, var(--brand)) 8%, white);
+  color: var(--text);
+}
+
+.teamDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--team-color, var(--brand));
+  flex-shrink: 0;
+}
+
+/* ── Buttons ───────────────────────────── */
+
+.submitBtn {
+  width: 100%;
+  justify-content: center;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 4px;
+  gap: 8px;
+}
+
+.backBtn {
+  width: 100%;
+  justify-content: center;
+  padding: 10px;
+  font-size: 13px;
+  margin-top: -8px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(31, 29, 23, 0.2);
+  border-top-color: var(--text-on-brand);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Footer ────────────────────────────── */
+
+.footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--brand-strong);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover { color: var(--brand); }
+}

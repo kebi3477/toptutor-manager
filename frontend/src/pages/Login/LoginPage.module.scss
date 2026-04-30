@@ -1,0 +1,155 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-lg);
+  padding: 40px 44px 36px;
+  width: 100%;
+  max-width: 420px;
+}
+
+/* ── Brand ─────────────────────────────── */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.brandLogo {
+  width: 36px;
+  height: 36px;
+  background: var(--brand);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: var(--text-on-brand);
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+/* ── Head ──────────────────────────────── */
+
+.head {
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 6px;
+  color: var(--text);
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--text-3);
+  margin: 0;
+}
+
+/* ── Form ──────────────────────────────── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pwWrap {
+  position: relative;
+}
+
+.pwInput {
+  width: 100%;
+  padding-right: 40px !important;
+}
+
+.pwToggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--text-3);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+
+  &:hover { color: var(--text-2); }
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--red);
+  background: var(--red-soft);
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+}
+
+.submitBtn {
+  width: 100%;
+  justify-content: center;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 4px;
+  gap: 8px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(31, 29, 23, 0.2);
+  border-top-color: var(--text-on-brand);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Footer ────────────────────────────── */
+
+.footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--brand-strong);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover { color: var(--brand); }
+}

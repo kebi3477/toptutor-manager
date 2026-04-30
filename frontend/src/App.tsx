@@ -8,6 +8,8 @@ import MealsPage from './pages/Meals/MealsPage';
 import TeamsAdmin from './pages/TeamsAdmin/TeamsAdmin';
 import UsersAdmin from './pages/UsersAdmin/UsersAdmin';
 import MealsEdit from './pages/MealsEdit/MealsEdit';
+import LoginPage from './pages/Login/LoginPage';
+import SignupPage from './pages/Signup/SignupPage';
 import Icon from './components/Icon/Icon';
 import styles from './App.module.scss';
 
@@ -20,10 +22,20 @@ const PAGE_META: Record<PageId, { title: string; sub?: string }> = {
   'meals-edit': { title: '식단표 등록', sub: '주간 식단 등록 및 편집' },
 };
 
+type AuthState = 'login' | 'signup' | 'app';
+
 function App() {
+  const [auth, setAuth] = useState<AuthState>('login');
   const [page, setPage] = useState<PageId>('dashboard');
   const [isAdmin, setIsAdmin] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
+
+  if (auth === 'login') {
+    return <LoginPage onLogin={() => setAuth('app')} onGoSignup={() => setAuth('signup')} />;
+  }
+  if (auth === 'signup') {
+    return <SignupPage onSignup={() => setAuth('app')} onGoLogin={() => setAuth('login')} />;
+  }
 
   const meta = PAGE_META[page];
 
