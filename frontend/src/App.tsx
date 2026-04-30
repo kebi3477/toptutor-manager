@@ -7,6 +7,7 @@ import CalendarPage from './pages/Calendar/CalendarPage';
 import MealsPage from './pages/Meals/MealsPage';
 import TeamsAdmin from './pages/TeamsAdmin/TeamsAdmin';
 import UsersAdmin from './pages/UsersAdmin/UsersAdmin';
+import MealsEdit from './pages/MealsEdit/MealsEdit';
 import Icon from './components/Icon/Icon';
 import styles from './App.module.scss';
 
@@ -55,7 +56,7 @@ function App() {
       case 'users':
         return isAdmin ? <UsersAdmin /> : <PlaceholderPage title="사용자 관리" sub="관리자만 접근할 수 있습니다." icon="users" />;
       case 'meals-edit':
-        return isAdmin ? <PlaceholderPage title="식단표 등록" sub="준비 중입니다." icon="edit" /> : <PlaceholderPage title="식단표 등록" sub="관리자만 접근할 수 있습니다." icon="edit" />;
+        return isAdmin ? <MealsEdit /> : <PlaceholderPage title="식단표 등록" sub="관리자만 접근할 수 있습니다." icon="edit" />;
       default:
         return null;
     }

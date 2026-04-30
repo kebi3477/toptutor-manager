@@ -46,11 +46,6 @@ function MealsPage({ isAdmin }: MealsPageProps) {
             </button>
           </div>
         </div>
-        {isAdmin && (
-          <button className="btn">
-            <Icon name="edit" size={14} /> 이번 주 식단 편집
-          </button>
-        )}
       </div>
 
       <div className={styles.grid}>
