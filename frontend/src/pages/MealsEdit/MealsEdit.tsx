@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MealDay } from '../../types';
 import { mealsApi } from '../../api';
 import { TODAY, KOR_MONTHS, KOR_DAYS, fmtDate, parseDate, addDays, startOfWeek, isSameDay } from '../../utils/date';
@@ -37,13 +37,56 @@ const QUICK_TEMPLATES = ['쌀밥', '잡곡밥', '김치', '단무지', '요거�
 
 function MenuEditor({ menu, onChange }: MenuEditorProps) {
   const items = menu || [];
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const focusIdx = useRef<number | null>(null);
+
+  // 항목 추가 후 해당 인덱스로 포커스
+  useEffect(() => {
+    if (focusIdx.current !== null) {
+      inputRefs.current[focusIdx.current]?.focus();
+      focusIdx.current = null;
+    }
+  });
+
   const update = (i: number, val: string) => { const n = [...items]; n[i] = val; onChange(n); };
-  const add = () => onChange([...items, '']);
-  const remove = (i: number) => onChange(items.filter((_, idx) => idx !== i));
+
+  const addAt = (afterIdx: number) => {
+    const n = [...items];
+    n.splice(afterIdx + 1, 0, '');
+    focusIdx.current = afterIdx + 1;
+    onChange(n);
+  };
+
+  const add = () => {
+    focusIdx.current = items.length;
+    onChange([...items, '']);
+  };
+
+  const remove = (i: number) => {
+    if (items.length > 1) focusIdx.current = Math.max(0, i - 1);
+    onChange(items.filter((_, idx) => idx !== i));
+  };
+
   const move = (i: number, dir: number) => {
     const j = i + dir;
     if (j < 0 || j >= items.length) return;
     const n = [...items]; [n[i], n[j]] = [n[j], n[i]]; onChange(n);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, i: number) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addAt(i);
+    } else if (e.key === 'Backspace' && items[i] === '' && items.length > 1) {
+      e.preventDefault();
+      remove(i);
+    } else if (e.key === 'ArrowUp' && i > 0) {
+      e.preventDefault();
+      inputRefs.current[i - 1]?.focus();
+    } else if (e.key === 'ArrowDown' && i < items.length - 1) {
+      e.preventDefault();
+      inputRefs.current[i + 1]?.focus();
+    }
   };
 
   return (
@@ -53,9 +96,11 @@ function MenuEditor({ menu, onChange }: MenuEditorProps) {
           <div key={i} className={styles.menuRow}>
             <span className={`${styles.menuRowNum} tnum`}>{i + 1}</span>
             <input
+              ref={el => { inputRefs.current[i] = el; }}
               className={`input ${styles.menuRowInput}`}
               value={it}
               onChange={e => update(i, e.target.value)}
+              onKeyDown={e => handleKeyDown(e, i)}
               placeholder="메뉴 이름 (예: 김치찌개)"
             />
             <div className="row" style={{ gap: 2 }}>
@@ -157,7 +202,7 @@ function MealsEdit() {
 
   const toggleHoliday = (di: number) => {
     const d = draft[di];
-    if (d.holiday) updateDay(di, { holiday: null, lunch: [] });
+    if (d.holiday !== null) updateDay(di, { holiday: null, lunch: [] });
     else updateDay(di, { holiday: '휴무', lunch: null });
   };
 
@@ -238,7 +283,7 @@ function MealsEdit() {
                 return (
                   <button
                     key={d.date}
-                    className={`${styles.dayTab} ${activeDay === i ? styles.dayTabActive : ''} ${d.holiday ? styles.dayTabHoliday : ''}`}
+                    className={`${styles.dayTab} ${activeDay === i ? styles.dayTabActive : ''} ${d.holiday !== null ? styles.dayTabHoliday : ''}`}
                     onClick={() => setActiveDay(i)}
                   >
                     <div className={styles.dayTabName}>
@@ -246,8 +291,8 @@ function MealsEdit() {
                       {isToday && <span className={styles.todayMark}>오늘</span>}
                     </div>
                     <div className={`${styles.dayTabDate} tnum`}>{dt.getMonth() + 1}.{dt.getDate()}</div>
-                    {d.holiday ? (
-                      <div className={`${styles.dayTabStatus} ${styles.dayTabStatusHoliday}`}>{d.holiday}</div>
+                    {d.holiday !== null ? (
+                      <div className={`${styles.dayTabStatus} ${styles.dayTabStatusHoliday}`}>{d.holiday || '휴무'}</div>
                     ) : (
                       <div className={styles.dayTabStatus}>
                         {(d.lunch || []).filter(x => x).length}개 메뉴
@@ -271,14 +316,14 @@ function MealsEdit() {
                   <input
                     type="checkbox"
                     className="cb"
-                    checked={!!day.holiday}
+                    checked={day.holiday !== null}
                     onChange={() => toggleHoliday(activeDay)}
                   />
                   휴무일로 설정
                 </label>
               </div>
 
-              {day.holiday ? (
+              {day.holiday !== null ? (
                 <div className={styles.holidayForm}>
                   <div className="field">
                     <label className="field-label">휴무 사유</label>
@@ -315,7 +360,7 @@ function MealsEdit() {
                 return (
                   <div
                     key={m.date}
-                    className={`${styles.previewCard} ${isToday ? styles.previewCardToday : ''} ${m.holiday ? styles.previewCardHoliday : ''} ${isActive ? styles.previewCardEditing : ''}`}
+                    className={`${styles.previewCard} ${isToday ? styles.previewCardToday : ''} ${m.holiday !== null ? styles.previewCardHoliday : ''} ${isActive ? styles.previewCardEditing : ''}`}
                   >
                     <div className={styles.previewCardHead}>
                       <div>
@@ -324,9 +369,9 @@ function MealsEdit() {
                       </div>
                       {isActive && <span className="chip chip-event" style={{ fontSize: 10 }}>편집중</span>}
                     </div>
-                    {m.holiday ? (
+                    {m.holiday !== null ? (
                       <div className={styles.previewEmpty}>
-                        <div className={styles.previewEmptyTitle}>{m.holiday}</div>
+                        <div className={styles.previewEmptyTitle}>{m.holiday || '휴무'}</div>
                         <div className={styles.previewEmptySub}>휴무</div>
                       </div>
                     ) : (
