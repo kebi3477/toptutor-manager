@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>마더텅 매니저</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles-pages.css" />
+  <link rel="stylesheet" href="styles-teams.css" />
+  <link rel="stylesheet" href="styles-users.css" />
+  <link rel="stylesheet" href="styles-meals-edit.css" />
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="components.jsx"></script>
+  <script type="text/babel" src="layout.jsx"></script>
+  <script type="text/babel" src="page-dashboard.jsx"></script>
+  <script type="text/babel" src="page-calendar.jsx"></script>
+  <script type="text/babel" src="page-meals.jsx"></script>
+  <script type="text/babel" src="page-teams.jsx"></script>
+  <script type="text/babel" src="page-users.jsx"></script>
+  <script type="text/babel" src="page-meals-edit.jsx"></script>
+  <script type="text/babel" src="modal-create.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <script type="text/babel">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "role": "admin",
+      "page": "users",
+      "density": "comfortable"
+    }/*EDITMODE-END*/;
+
+    function AdminPlaceholder({ icon, title, sub }) {
+      return (
+        <div className="content">
+          <div className="card placeholder-page">
+            <div>
+              <div className="placeholder-icon"><Icon name={icon} size={28} /></div>
+              <div className="placeholder-title">{title}</div>
+              <div className="placeholder-sub">{sub}</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const [page, setPage] = useState(t.page || 'dashboard');
+      const [modalOpen, setModalOpen] = useState(false);
+      const isAdmin = t.role === 'admin';
+
+      // Sync page changes back to persistent state
+      React.useEffect(() => { setTweak('page', page); }, [page]);
+
+      // If admin role is turned off while on admin page, fall back
+      React.useEffect(() => {
+        if (!isAdmin && ['teams', 'users', 'meals-edit'].includes(page)) {
+          setPage('dashboard');
+        }
+        if (page === 'company-events') setPage('dashboard');
+      }, [isAdmin, page]);
+
+      let view, title, sub, actions;
+      if (page === 'dashboard') {
+        title = '대시보드';
+        sub = '오늘의 사내 현황을 한눈에';
+        actions = <button className="btn btn-primary" onClick={() => setModalOpen(true)}><Icon name="plus" size={14} /> 일정 등록</button>;
+        view = <Dashboard isAdmin={isAdmin} onCreateEvent={() => setModalOpen(true)} />;
+      } else if (page === 'calendar') {
+        title = '캘린더';
+        sub = '회사 일정과 개인 휴가를 한곳에서';
+        view = <Calendar isAdmin={isAdmin} onCreateEvent={() => setModalOpen(true)} />;
+      } else if (page === 'meals') {
+        title = '식단표';
+        sub = '구내식당 주간 메뉴';
+        view = <Meals isAdmin={isAdmin} />;
+      } else if (page === 'teams') {
+        title = '팀 관리';
+        sub = `${TEAMS.length}개 팀`;
+        view = <TeamsAdmin />;
+      } else if (page === 'users') {
+        title = '사용자 관리';
+        sub = `${MEMBERS.length}명 · ${TEAMS.length}개 팀`;
+        view = <UsersAdmin />;
+      } else if (page === 'meals-edit') {
+        title = '식단표 등록';
+        sub = '주간 식단을 입력하고 직원들에게 공지합니다';
+        view = <MealsEdit />;
+      }
+
+      return (
+        <div className="app">
+          <Sidebar page={page} setPage={setPage} isAdmin={isAdmin} />
+          <main className="main">
+            <Topbar title={title} sub={sub} actions={actions} />
+            {view}
+          </main>
+
+          <CreateEventModal open={modalOpen} onClose={() => setModalOpen(false)} isAdmin={isAdmin} />
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="사용자 권한" />
+            <TweakRadio label="로그인 모드" value={t.role}
+              options={[
+                { value: 'employee', label: '직원' },
+                { value: 'admin', label: '관리자' },
+              ]}
+              onChange={v => setTweak('role', v)} />
+            <div style={{ fontSize: 11, color: 'rgba(41,38,27,.55)', lineHeight: 1.5, padding: '4px 2px' }}>
+              관리자 모드를 켜면 사이드바에 관리자 메뉴(사용자/회사일정/식단표 등록)가 추가되고, 일정 등록 모달에 “회사 일정” 옵션이 노출됩니다.
+            </div>
+            <TweakSection label="페이지" />
+            <TweakSelect label="현재 페이지" value={page}
+              options={[
+                { value: 'dashboard', label: '대시보드' },
+                { value: 'calendar', label: '캘린더' },
+                { value: 'meals', label: '식단표' },
+                ...(isAdmin ? [
+                  { value: 'teams', label: '팀 관리 (관리자)' },
+                  { value: 'users', label: '사용자 관리 (관리자)' },
+                  { value: 'meals-edit', label: '식단표 등록 (관리자)' },
+                ] : []),
+              ]}
+              onChange={v => setPage(v)} />
+            <TweakButton label="일정 등록 모달 열기" onClick={() => setModalOpen(true)} />
+          </TweaksPanel>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
