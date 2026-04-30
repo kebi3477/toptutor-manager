@@ -1,0 +1,299 @@
+.content {
+  padding: 28px 28px 56px;
+  max-width: 1320px;
+  width: 100%;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #FFFBF1 0%, #FFF4E0 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 22px 26px;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle at center, rgba(254,163,43,0.18), transparent 70%);
+  }
+}
+
+.heroDate {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.heroDay {
+  font-size: 13px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.heroStats {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  position: relative;
+  z-index: 1;
+}
+
+.stat {
+  text-align: right;
+  min-width: 80px;
+}
+
+.statNum {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.statLbl {
+  font-size: 11.5px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+.statSep {
+  width: 1px;
+  height: 32px;
+  background: var(--border-strong);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+
+.col4 { grid-column: span 4; }
+.col5 { grid-column: span 5; }
+.col7 { grid-column: span 7; }
+.col8 { grid-column: span 8; }
+
+/* Leave cards */
+.leaveGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.leaveCard {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.12s;
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+}
+
+.leaveCardHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.leaveCardName {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.leaveCardTeam {
+  font-size: 11.5px;
+  color: var(--text-3);
+  margin-top: 1px;
+}
+
+.leaveCardMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.leaveReturn {
+  font-size: 11.5px;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+/* Today events */
+.todayEvents {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.todayEvent {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  border-left: 3px solid var(--brand);
+}
+
+.todayEventTime {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-strong);
+  min-width: 44px;
+}
+
+.todayEventTitle {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.todayEventLoc {
+  font-size: 11.5px;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+/* Upcoming */
+.upcomingList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.upcomingItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--divider);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.upcomingDate {
+  width: 44px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.upcomingDay {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.upcomingMonth {
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+
+.upcomingBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.upcomingTitle {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.upcomingMeta {
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+.dday {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--brand-strong);
+  background: var(--brand-soft);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+/* Meal week preview */
+.mealWeek {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.mealDay {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 10px;
+  background: var(--surface);
+  min-height: 140px;
+}
+
+.mealDayToday {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.mealDayHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.mealDayName {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mealDayDate {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.mealDayMenu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11.5px;
+  color: var(--text-2);
+
+  li {
+    padding: 2px 0;
+  }
+}
+
+.mealDayHoliday {
+  font-size: 11.5px;
+  color: var(--red);
+  font-weight: 500;
+  text-align: center;
+  padding: 24px 6px;
+  line-height: 1.5;
+}

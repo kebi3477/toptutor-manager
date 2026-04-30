@@ -1,0 +1,45 @@
+// Colors
+$primary: #2563eb;
+$primary-dark: #1d4ed8;
+$secondary: #64748b;
+$success: #22c55e;
+$danger: #ef4444;
+$warning: #f59e0b;
+
+$bg-light: #f8fafc;
+$bg-white: #ffffff;
+$border-color: #e2e8f0;
+
+$text-primary: #1e293b;
+$text-secondary: #64748b;
+$text-muted: #94a3b8;
+
+// Typography
+$font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+$font-size-base: 14px;
+$font-size-sm: 12px;
+$font-size-lg: 16px;
+$font-size-xl: 20px;
+
+// Spacing
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+
+// Border
+$border-radius: 8px;
+$border-radius-sm: 4px;
+$border-radius-lg: 12px;
+
+// Shadow
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+// Breakpoints
+$bp-sm: 576px;
+$bp-md: 768px;
+$bp-lg: 1024px;
+$bp-xl: 1280px;
