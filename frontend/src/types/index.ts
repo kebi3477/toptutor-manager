@@ -2,6 +2,18 @@ export interface Team {
   id: string;
   name: string;
   color: string;
+  order?: number;
+}
+
+export interface CreateTeamPayload {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface UpdateTeamPayload {
+  name?: string;
+  color?: string;
 }
 
 export interface Member {
