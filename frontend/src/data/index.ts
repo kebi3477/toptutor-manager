@@ -15,40 +15,7 @@ export const TEAMS: Team[] = [
   { id: 'design', name: '디자인팀', color: '#C2854A' },
 ];
 
-const FIRST_NAMES = ['지훈','서연','민준','수아','도윤','지유','시우','하은','준우','채원','은우','다은','지호','윤서','태민','서윤','우진','지원','승현','예린','현우','수빈','정우','민서','재현','다현','선우','유진','동현','하린'];
-const LAST_NAMES = ['김','이','박','최','정','강','조','윤','장','임','한','오','신','권','황','안','송','류','전','홍','문','양','손','배'];
-
-function makeName(seed: number): string {
-  const ln = LAST_NAMES[seed % LAST_NAMES.length];
-  const fn = FIRST_NAMES[(seed * 7) % FIRST_NAMES.length];
-  return ln + fn;
-}
-
-const TEAM_SIZES = [5, 4, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4];
-
-export const MEMBERS: Member[] = (() => {
-  const out: Member[] = [];
-  let id = 1;
-  TEAMS.forEach((team, ti) => {
-    for (let i = 0; i < TEAM_SIZES[ti]; i++) {
-      const seed = id * 13 + ti;
-      out.push({
-        id: 'u' + id,
-        name: makeName(seed),
-        team: team.id,
-        role: i === 0 ? '팀장' : id % 11 === 0 ? '매니저' : '사원',
-        joinedYear: 2018 + (seed % 8),
-      });
-      id++;
-    }
-  });
-  return out;
-})();
-
-export const ME = MEMBERS.find(m => m.id === 'u15')!;
-export const ADMIN = MEMBERS[0];
-
-export const TODAY = new Date(2026, 3, 30);
+export const TODAY = new Date();
 
 export const COMPANY_EVENTS: CompanyEvent[] = [
   { id: 'c1', title: '월례 전사 미팅', date: '2026-04-30', time: '14:00', location: '본사 대강당', type: 'meeting' },
@@ -110,10 +77,10 @@ export function getTeam(id: string): Team {
   return TEAMS.find(t => t.id === id)!;
 }
 
-export function getMember(id: string): Member {
-  return MEMBERS.find(m => m.id === id)!;
+export function getMember(id: string, members: Member[]): Member | undefined {
+  return members.find(m => m.id === id);
 }
 
-export function membersByTeam(teamId: string): Member[] {
-  return MEMBERS.filter(m => m.team === teamId);
+export function membersByTeam(teamId: string, members: Member[]): Member[] {
+  return members.filter(m => m.teamId === teamId);
 }

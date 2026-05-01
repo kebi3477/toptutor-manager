@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom';
-import { getTeam, ME, ADMIN } from '../../data';
+import { getTeam } from '../../data';
 import { todaysLeaves } from '../../utils/date';
 import Icon from '../../components/Icon/Icon';
+import { useAppContext } from '../../context/AppContext';
 import styles from './Sidebar.module.scss';
 
 interface NavItem {
@@ -27,8 +28,9 @@ interface SidebarProps {
 }
 
 function Sidebar({ isAdmin }: SidebarProps) {
-  const me = isAdmin ? ADMIN : ME;
-  const myTeam = getTeam(me.team);
+  const { members } = useAppContext();
+  const me = isAdmin ? members[0] : members[0];
+  const myTeam = me ? getTeam(me.teamId) : null;
   const leaveCount = todaysLeaves().length;
 
   return (
@@ -78,18 +80,20 @@ function Sidebar({ isAdmin }: SidebarProps) {
 
       <div className={styles.spacer} />
 
-      <div className={styles.user}>
-        <div className={styles.userAvatar} style={{ background: myTeam.color }}>
-          {me.name.slice(-2)}
-        </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div className={`${styles.userName} truncate`}>
-            {me.name}
-            {isAdmin && <span className={styles.adminMark}>&nbsp;·관리자</span>}
+      {me && myTeam && (
+        <div className={styles.user}>
+          <div className={styles.userAvatar} style={{ background: myTeam.color }}>
+            {me.name.slice(-2)}
           </div>
-          <div className={styles.userRole}>{myTeam.name} · {me.role}</div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className={`${styles.userName} truncate`}>
+              {me.name}
+              {isAdmin && <span className={styles.adminMark}>&nbsp;·관리자</span>}
+            </div>
+            <div className={styles.userRole}>{myTeam.name} · {me.role}</div>
+          </div>
         </div>
-      </div>
+      )}
     </aside>
   );
 }

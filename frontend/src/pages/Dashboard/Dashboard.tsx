@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { COMPANY_EVENTS, MEMBERS, getMember, getTeam } from '../../data';
+import { COMPANY_EVENTS, getMember, getTeam } from '../../data';
 import { MealDay } from '../../types';
 import { mealsApi } from '../../api';
 import { TODAY, KOR_MONTHS, KOR_DAYS, fmtDate, parseDate, addDays, startOfWeek, isSameDay, dateInRange, daysBetween, todaysLeaves } from '../../utils/date';
 import Avatar from '../../components/Avatar/Avatar';
 import Icon from '../../components/Icon/Icon';
+import { useAppContext } from '../../context/AppContext';
 import styles from './Dashboard.module.scss';
 
 interface DashboardProps {
   isAdmin: boolean;
-  onCreateEvent: () => void;
 }
 
-function Dashboard({ isAdmin, onCreateEvent }: DashboardProps) {
+function Dashboard({ isAdmin }: DashboardProps) {
+  const { members } = useAppContext();
   const today = TODAY;
   const todayStr = `${today.getFullYear()}년 ${KOR_MONTHS[today.getMonth()]} ${today.getDate()}일`;
   const dayName = KOR_DAYS[today.getDay()] + '요일';
@@ -65,7 +66,7 @@ function Dashboard({ isAdmin, onCreateEvent }: DashboardProps) {
           </div>
           <div className={styles.statSep} />
           <div className={styles.stat}>
-            <div className={`${styles.statNum} tnum`}>{MEMBERS.length - todays.length}</div>
+            <div className={`${styles.statNum} tnum`}>{members.length - todays.length}</div>
             <div className={styles.statLbl}>정상 출근</div>
           </div>
         </div>
@@ -86,8 +87,9 @@ function Dashboard({ isAdmin, onCreateEvent }: DashboardProps) {
             ) : (
               <div className={styles.leaveGrid}>
                 {todays.map(e => {
-                  const m = getMember(e.userId);
-                  const t = getTeam(m.team);
+                  const m = getMember(e.userId, members);
+                  if (!m) return null;
+                  const t = getTeam(m.teamId);
                   const returnDate = addDays(parseDate(e.endDate), 1);
                   const isNextDay = isSameDay(returnDate, addDays(today, 1));
                   return (

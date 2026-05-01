@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import Sidebar from './layouts/Sidebar/Sidebar';
 import Topbar from './layouts/Topbar/Topbar';
@@ -11,7 +11,9 @@ import MealsEdit from './pages/MealsEdit/MealsEdit';
 import LoginPage from './pages/Login/LoginPage';
 import SignupPage from './pages/Signup/SignupPage';
 import Icon from './components/Icon/Icon';
+import CreateEventModal from './components/CreateEventModal/CreateEventModal';
 import { AppProvider, useAppContext } from './context/AppContext';
+import { membersApi } from './api';
 import styles from './App.module.scss';
 
 // ── Page metadata keyed by pathname ─────────────────────────────────────────
@@ -39,7 +41,11 @@ function PublicRoute({ isLoggedIn }: { isLoggedIn: boolean }) {
 
 function AppShell() {
   const location = useLocation();
-  const { isAdmin, setIsAdmin, showCreateEvent, setShowCreateEvent } = useAppContext();
+  const { isAdmin, setIsAdmin, showCreateEvent, setShowCreateEvent, setMembers } = useAppContext();
+
+  useEffect(() => {
+    membersApi.getAll().then(setMembers).catch(() => {});
+  }, [setMembers]);
 
   const meta = PAGE_META[location.pathname] ?? { title: '' };
   const isCalendarish = location.pathname === '/dashboard' || location.pathname === '/calendar';
@@ -74,6 +80,11 @@ function AppShell() {
           <Outlet context={{ isAdmin, showCreateEvent, setShowCreateEvent }} />
         </div>
       </div>
+      <CreateEventModal
+        open={showCreateEvent}
+        onClose={() => setShowCreateEvent(false)}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 }
@@ -97,13 +108,13 @@ function PlaceholderPage({ title, sub, icon }: { title: string; sub: string; ico
 type ShellContext = { isAdmin: boolean; showCreateEvent: boolean; setShowCreateEvent: (v: boolean) => void };
 
 function DashboardPage() {
-  const { isAdmin, showCreateEvent, setShowCreateEvent } = useOutletContext<ShellContext>();
-  return <Dashboard isAdmin={isAdmin} onCreateEvent={() => setShowCreateEvent(true)} />;
+  const { isAdmin } = useOutletContext<ShellContext>();
+  return <Dashboard isAdmin={isAdmin} />;
 }
 
 function CalendarRoutePage() {
-  const { isAdmin, showCreateEvent, setShowCreateEvent } = useOutletContext<ShellContext>();
-  return <CalendarPage isAdmin={isAdmin} onCreateEvent={() => setShowCreateEvent(true)} />;
+  const { isAdmin } = useOutletContext<ShellContext>();
+  return <CalendarPage isAdmin={isAdmin} />;
 }
 
 function MealsRoutePage() {

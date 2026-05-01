@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { TEAMS, MEMBERS, getTeam, membersByTeam } from '../../data';
+import { TEAMS, getTeam, membersByTeam } from '../../data';
 import { todaysLeaves } from '../../utils/date';
 import { Member } from '../../types';
 import Avatar from '../../components/Avatar/Avatar';
 import Icon from '../../components/Icon/Icon';
+import { useAppContext } from '../../context/AppContext';
 import styles from './UsersAdmin.module.scss';
 
 function UserEditModal({ member, onClose, mode }: { member?: Member; onClose: () => void; mode: 'add' | 'edit' }) {
   const [name, setName] = useState(member?.name || '');
-  const [team, setTeam] = useState(member?.team || TEAMS[0].id);
+  const [team, setTeam] = useState(member?.teamId || TEAMS[0].id);
   const [role, setRole] = useState<'팀장' | '매니저' | '사원'>(member?.role || '사원');
-  const [email, setEmail] = useState(member ? `${member.id}@mothertongue.kr` : '');
-  const [joinedYear, setJoinedYear] = useState(member?.joinedYear || 2026);
   const [isAdmin, setIsAdmin] = useState(false);
 
   return (
@@ -22,15 +21,9 @@ function UserEditModal({ member, onClose, mode }: { member?: Member; onClose: ()
           <button className="btn btn-icon btn-ghost" onClick={onClose}><Icon name="x" /></button>
         </div>
         <div className="modal-bd">
-          <div className="row" style={{ gap: 10 }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label className="field-label">이름</label>
-              <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="홍길동" />
-            </div>
-            <div className="field" style={{ flex: 1 }}>
-              <label className="field-label">이메일</label>
-              <input className="input" value={email} onChange={e => setEmail(e.target.value)} placeholder="name@mothertongue.kr" />
-            </div>
+          <div className="field">
+            <label className="field-label">이름</label>
+            <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="홍길동" />
           </div>
 
           <div className="field">
@@ -49,20 +42,14 @@ function UserEditModal({ member, onClose, mode }: { member?: Member; onClose: ()
             </div>
           </div>
 
-          <div className="row" style={{ gap: 10 }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label className="field-label">역할</label>
-              <div className="seg" style={{ width: '100%' }}>
-                {(['팀장', '매니저', '사원'] as const).map(r => (
-                  <button key={r} className={`seg-btn ${role === r ? 'active' : ''}`} onClick={() => setRole(r)} style={{ flex: 1 }}>
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="field" style={{ width: 120 }}>
-              <label className="field-label">입사년도</label>
-              <input className="input tnum" type="number" value={joinedYear} onChange={e => setJoinedYear(+e.target.value)} />
+          <div className="field">
+            <label className="field-label">역할</label>
+            <div className="seg" style={{ width: '100%' }}>
+              {(['팀장', '매니저', '사원'] as const).map(r => (
+                <button key={r} className={`seg-btn ${role === r ? 'active' : ''}`} onClick={() => setRole(r)} style={{ flex: 1 }}>
+                  {r}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -114,6 +101,7 @@ function BulkTeamSelect({ onSelect }: { onSelect: () => void }) {
 }
 
 function UsersAdmin() {
+  const { members } = useAppContext();
   const [search, setSearch] = useState('');
   const [teamFilter, setTeamFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -121,9 +109,9 @@ function UsersAdmin() {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
 
-  const filtered = MEMBERS.filter(m => {
+  const filtered = members.filter(m => {
     if (search && !m.name.includes(search)) return false;
-    if (teamFilter !== 'all' && m.team !== teamFilter) return false;
+    if (teamFilter !== 'all' && m.teamId !== teamFilter) return false;
     if (roleFilter !== 'all' && m.role !== roleFilter) return false;
     return true;
   });
@@ -137,7 +125,7 @@ function UsersAdmin() {
     setSelectedIds(selectedIds.includes(id) ? selectedIds.filter(x => x !== id) : [...selectedIds, id]);
   };
 
-  const teamCounts = TEAMS.map(t => ({ ...t, count: membersByTeam(t.id).length }));
+  const teamCounts = TEAMS.map(t => ({ ...t, count: membersByTeam(t.id, members).length }));
   const leaves = todaysLeaves();
 
   return (
@@ -161,7 +149,7 @@ function UsersAdmin() {
           <div>
             <h3 className="card-title">전체 사용자</h3>
             <div className="card-sub" style={{ marginTop: 2 }}>
-              {filtered.length}명 / 총 {MEMBERS.length}명
+              {filtered.length}명 / 총 {members.length}명
               {selectedIds.length > 0 && (
                 <> · <span style={{ color: 'var(--brand-strong)', fontWeight: 600 }}>{selectedIds.length}명 선택됨</span></>
               )}
@@ -212,14 +200,13 @@ function UsersAdmin() {
               <th>이름</th>
               <th>팀</th>
               <th>역할</th>
-              <th>입사년도</th>
               <th>오늘 상태</th>
               <th style={{ width: 40 }}></th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(m => {
-              const t = getTeam(m.team);
+              const t = getTeam(m.teamId);
               const leave = leaves.find(e => e.userId === m.id);
               const checked = selectedIds.includes(m.id);
               return (
@@ -230,7 +217,7 @@ function UsersAdmin() {
                   <td><Avatar member={m} /></td>
                   <td>
                     <div style={{ fontWeight: 600 }}>{m.name}</div>
-                    <div className="muted" style={{ fontSize: 11, marginTop: 1 }}>{m.id.toUpperCase()}@mothertongue.kr</div>
+                    <div className="muted" style={{ fontSize: 11, marginTop: 1 }}>{m.id}@mothertongue.kr</div>
                   </td>
                   <td>
                     <span className="team-tag">
@@ -243,7 +230,6 @@ function UsersAdmin() {
                       {m.role}
                     </span>
                   </td>
-                  <td className="muted tnum">{m.joinedYear}</td>
                   <td>
                     {leave ? (
                       <span className={`chip ${leave.type === 'half' ? 'chip-half' : 'chip-leave'}`}>
@@ -262,7 +248,7 @@ function UsersAdmin() {
               );
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={8} className="empty" style={{ padding: 40 }}>검색 결과가 없습니다.</td></tr>
+              <tr><td colSpan={7} className="empty" style={{ padding: 40 }}>검색 결과가 없습니다.</td></tr>
             )}
           </tbody>
         </table>

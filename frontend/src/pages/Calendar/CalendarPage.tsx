@@ -1,25 +1,25 @@
 import React, { useState } from 'react';
-import { TEAMS, getMember, getTeam } from '../../data';
-import { TODAY, KOR_DAYS, KOR_MONTHS, addDays, isSameDay, fmtDate, eventsOnDate } from '../../utils/date';
+import { TEAMS, getMember } from '../../data';
+import { TODAY, KOR_DAYS, KOR_MONTHS, addDays, isSameDay, eventsOnDate } from '../../utils/date';
 import Icon from '../../components/Icon/Icon';
 import EventChip from '../../components/EventChip/EventChip';
+import { useAppContext } from '../../context/AppContext';
 import styles from './CalendarPage.module.scss';
 
 interface CalendarPageProps {
   isAdmin: boolean;
-  onCreateEvent: () => void;
 }
 
 type Filter = 'all' | 'company' | 'personal';
 
-function CalendarPage({ isAdmin, onCreateEvent }: CalendarPageProps) {
+function CalendarPage({ isAdmin }: CalendarPageProps) {
+  const { members } = useAppContext();
   const [cursor, setCursor] = useState(new Date(TODAY.getFullYear(), TODAY.getMonth(), 1));
   const [filter, setFilter] = useState<Filter>('all');
   const [selectedTeam, setSelectedTeam] = useState('all');
 
   const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
   const gridStart = addDays(monthStart, -monthStart.getDay());
-
   const days = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
 
   const goPrev = () => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1));
@@ -58,10 +58,6 @@ function CalendarPage({ isAdmin, onCreateEvent }: CalendarPageProps) {
             <option value="all">모든 팀</option>
             {TEAMS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
-
-          <button className="btn btn-primary" onClick={onCreateEvent}>
-            <Icon name="plus" size={14} /> 일정 등록
-          </button>
         </div>
       </div>
 
@@ -86,7 +82,7 @@ function CalendarPage({ isAdmin, onCreateEvent }: CalendarPageProps) {
             const { company, personal } = eventsOnDate(d);
             const filteredPersonal = selectedTeam === 'all'
               ? personal
-              : personal.filter(p => getMember(p.userId).team === selectedTeam);
+              : personal.filter(p => getMember(p.userId, members)?.teamId === selectedTeam);
 
             let chips: { kind: 'company' | 'personal'; e: any }[] = [];
             if (filter !== 'personal') chips = chips.concat(company.map(e => ({ kind: 'company' as const, e })));

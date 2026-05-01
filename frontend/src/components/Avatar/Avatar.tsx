@@ -8,7 +8,7 @@ interface AvatarProps {
 }
 
 function Avatar({ member, size }: AvatarProps) {
-  const team = getTeam(member.team);
+  const team = getTeam(member.teamId);
   const initial = member.name.slice(-2);
   const cls = ['avatar', size === 'lg' ? 'lg' : size === 'sm' ? 'sm' : ''].filter(Boolean).join(' ');
 

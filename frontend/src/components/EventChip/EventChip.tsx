@@ -1,6 +1,7 @@
 import React from 'react';
 import { CompanyEvent, PersonalEvent } from '../../types';
 import { getMember, getTeam } from '../../data';
+import { useAppContext } from '../../context/AppContext';
 
 interface CompanyChipProps {
   kind: 'company';
@@ -15,6 +16,8 @@ interface PersonalChipProps {
 type EventChipProps = CompanyChipProps | PersonalChipProps;
 
 function EventChip(props: EventChipProps) {
+  const { members } = useAppContext();
+
   if (props.kind === 'company') {
     const { event } = props;
     const cls = event.type === 'holiday' ? 'chip-holiday'
@@ -29,8 +32,9 @@ function EventChip(props: EventChipProps) {
   }
 
   const { event } = props;
-  const member = getMember(event.userId);
-  const team = getTeam(member.team);
+  const member = getMember(event.userId, members);
+  if (!member) return null;
+  const team = getTeam(member.teamId);
   const cls = event.type === 'half' ? 'chip-half' : 'chip-leave';
   const label = event.type === 'half'
     ? (event.half === 'AM' ? '오전반차' : '오후반차')

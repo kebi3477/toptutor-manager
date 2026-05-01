@@ -1,0 +1,52 @@
+.userRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: 10px;
+}
+
+.userName {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.typeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.typeCard {
+  appearance: none;
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+
+  &:hover {
+    border-color: var(--text-4);
+    background: var(--surface-2);
+  }
+}
+
+.typeCardActive {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.typeCardLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.typeCardDesc {
+  font-size: 11px;
+  color: var(--text-3);
+}

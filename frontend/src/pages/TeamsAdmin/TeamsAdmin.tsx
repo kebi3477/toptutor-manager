@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { MEMBERS, getMember, membersByTeam } from '../../data';
+import { getMember, membersByTeam } from '../../data';
 import { todaysLeaves } from '../../utils/date';
 import { teamsApi } from '../../api';
 import { Team } from '../../types';
 import Avatar from '../../components/Avatar/Avatar';
 import Icon from '../../components/Icon/Icon';
+import { useAppContext } from '../../context/AppContext';
 import styles from './TeamsAdmin.module.scss';
 
 const PRESET_COLORS = [
@@ -267,6 +268,7 @@ function InlineNameEditor({
 type Modal = { type: 'add' } | { type: 'editColor'; team: Team } | { type: 'delete'; team: Team };
 
 function TeamsAdmin() {
+  const { members } = useAppContext();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
@@ -282,7 +284,7 @@ function TeamsAdmin() {
   }, []);
 
   const team = teams.find(t => t.id === selectedId);
-  const allMembers = selectedId ? membersByTeam(selectedId) : [];
+  const allMembers = selectedId ? membersByTeam(selectedId, members) : [];
   const filtered = search ? allMembers.filter(m => m.name.includes(search)) : allMembers;
   const leaves = todaysLeaves();
 
@@ -320,7 +322,7 @@ function TeamsAdmin() {
           <div className="card-hd" style={{ padding: '14px 16px 10px' }}>
             <div>
               <h3 className="card-title">팀 목록</h3>
-              <div className="card-sub" style={{ marginTop: 2 }}>{teams.length}개 팀 · {MEMBERS.length}명</div>
+              <div className="card-sub" style={{ marginTop: 2 }}>{teams.length}개 팀 · {members.length}명</div>
             </div>
             <button className="btn btn-icon" title="팀 추가" onClick={() => setModal({ type: 'add' })}>
               <Icon name="plus" size={14} />
@@ -328,7 +330,7 @@ function TeamsAdmin() {
           </div>
           <div className={styles.list}>
             {teams.map(t => {
-              const count = membersByTeam(t.id).length;
+              const count = membersByTeam(t.id, members).length;
               return (
                 <div
                   key={t.id}
@@ -393,7 +395,7 @@ function TeamsAdmin() {
                   { label: '팀장',     value: `${allMembers.filter(m => m.role === '팀장').length}명` },
                   { label: '매니저',   value: `${allMembers.filter(m => m.role === '매니저').length}명` },
                   { label: '사원',     value: `${allMembers.filter(m => m.role === '사원').length}명` },
-                  { label: '오늘 부재',value: `${leaves.filter(e => getMember(e.userId)?.team === team.id).length}명` },
+                  { label: '오늘 부재',value: `${leaves.filter(e => getMember(e.userId, members)?.teamId === team.id).length}명` },
                 ].map(s => (
                   <div key={s.label} className={styles.teamStat}>
                     <div className={styles.teamStatLabel}>{s.label}</div>
@@ -423,7 +425,6 @@ function TeamsAdmin() {
                     <th style={{ width: 38 }}></th>
                     <th>이름</th>
                     <th>역할</th>
-                    <th>입사년도</th>
                     <th>오늘 상태</th>
                     <th style={{ width: 80 }}></th>
                   </tr>
@@ -440,7 +441,6 @@ function TeamsAdmin() {
                             {m.role}
                           </span>
                         </td>
-                        <td className="muted tnum">{m.joinedYear}</td>
                         <td>
                           {leave ? (
                             <span className={`chip ${leave.type === 'half' ? 'chip-half' : 'chip-leave'}`}>
@@ -486,7 +486,7 @@ function TeamsAdmin() {
       {modal?.type === 'delete' && (
         <DeleteConfirmModal
           team={modal.team}
-          memberCount={membersByTeam(modal.team.id).length}
+          memberCount={membersByTeam(modal.team.id, members).length}
           onClose={() => setModal(null)}
           onDelete={() => handleDelete(modal.team.id)}
         />

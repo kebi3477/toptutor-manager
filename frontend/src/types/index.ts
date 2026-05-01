@@ -19,9 +19,8 @@ export interface UpdateTeamPayload {
 export interface Member {
   id: string;
   name: string;
-  team: string;
+  teamId: string;
   role: '팀장' | '매니저' | '사원';
-  joinedYear: number;
 }
 
 export interface CompanyEvent {
