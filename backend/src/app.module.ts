@@ -5,6 +5,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MealsModule } from './meals/meals.module';
 import { TeamsModule } from './teams/teams.module';
+import { MembersModule } from './members/members.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { TeamsModule } from './teams/teams.module';
     }),
     MealsModule,
     TeamsModule,
+    MembersModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

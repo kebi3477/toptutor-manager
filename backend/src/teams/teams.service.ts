@@ -64,7 +64,8 @@ export class TeamsService implements OnModuleInit {
 
   async update(id: string, dto: UpdateTeamDto): Promise<Team> {
     const team = await this.findOne(id);
-    Object.assign(team, dto);
+    const patch = Object.fromEntries(Object.entries(dto).filter(([, v]) => v !== undefined));
+    Object.assign(team, patch);
     return this.repo.save(team);
   }
 
