@@ -44,6 +44,27 @@ export interface PersonalEvent {
   label: string;
 }
 
+export interface CreateCompanyEventPayload {
+  id?: string;
+  title: string;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  time?: string;
+  location?: string;
+  type: 'meeting' | 'event' | 'holiday';
+}
+
+export interface CreatePersonalEventPayload {
+  id?: string;
+  userId: string;
+  type: 'leave' | 'half';
+  startDate: string;
+  endDate: string;
+  half?: 'AM' | 'PM';
+  label: string;
+}
+
 export interface MealDay {
   date: string;
   day: string;

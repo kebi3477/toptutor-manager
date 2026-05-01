@@ -1,5 +1,4 @@
 import { CompanyEvent, PersonalEvent } from '../types';
-import { COMPANY_EVENTS, PERSONAL_EVENTS, TODAY } from '../data';
 
 export { TODAY } from '../data';
 
@@ -27,7 +26,7 @@ export function addDays(d: Date, n: number): Date {
 
 export function startOfWeek(d: Date): Date {
   const x = new Date(d);
-  x.setDate(x.getDate() - x.getDay() + 1); // Monday
+  x.setDate(x.getDate() - x.getDay() + 1);
   return x;
 }
 
@@ -47,16 +46,20 @@ export function daysBetween(a: string, b: string): number {
   return Math.round((parseDate(b).getTime() - parseDate(a).getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export function eventsOnDate(date: Date): { company: CompanyEvent[]; personal: PersonalEvent[] } {
+export function eventsOnDate(
+  date: Date,
+  companyEvents: CompanyEvent[],
+  personalEvents: PersonalEvent[],
+): { company: CompanyEvent[]; personal: PersonalEvent[] } {
   const dStr = fmtDate(date);
-  const company = COMPANY_EVENTS.filter(e => {
+  const company = companyEvents.filter(e => {
     if (e.startDate && e.endDate) return dateInRange(date, e.startDate, e.endDate);
     return e.date === dStr;
   });
-  const personal = PERSONAL_EVENTS.filter(e => dateInRange(date, e.startDate, e.endDate));
+  const personal = personalEvents.filter(e => dateInRange(date, e.startDate, e.endDate));
   return { company, personal };
 }
 
-export function todaysLeaves(): PersonalEvent[] {
-  return PERSONAL_EVENTS.filter(e => dateInRange(TODAY, e.startDate, e.endDate));
+export function todaysLeaves(personalEvents: PersonalEvent[], today: Date): PersonalEvent[] {
+  return personalEvents.filter(e => dateInRange(today, e.startDate, e.endDate));
 }

@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { getTeam } from '../../data';
-import { todaysLeaves } from '../../utils/date';
+import { TODAY, todaysLeaves } from '../../utils/date';
 import Icon from '../../components/Icon/Icon';
 import { useAppContext } from '../../context/AppContext';
 import styles from './Sidebar.module.scss';
@@ -28,10 +28,10 @@ interface SidebarProps {
 }
 
 function Sidebar({ isAdmin }: SidebarProps) {
-  const { members } = useAppContext();
-  const me = isAdmin ? members[0] : members[0];
+  const { members, personalEvents } = useAppContext();
+  const me = members[0];
   const myTeam = me ? getTeam(me.teamId) : null;
-  const leaveCount = todaysLeaves().length;
+  const leaveCount = todaysLeaves(personalEvents, TODAY).length;
 
   return (
     <aside className={styles.sidebar}>

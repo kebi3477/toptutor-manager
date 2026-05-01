@@ -4,6 +4,7 @@ import Icon from '../Icon/Icon';
 import { getTeam } from '../../data';
 import { TODAY, fmtDate } from '../../utils/date';
 import { useAppContext } from '../../context/AppContext';
+import { eventsApi } from '../../api';
 import styles from './CreateEventModal.module.scss';
 
 type EventType = 'leave' | 'half' | 'personal-event' | 'company';
@@ -15,7 +16,7 @@ interface CreateEventModalProps {
 }
 
 function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
-  const { members } = useAppContext();
+  const { members, companyEvents, personalEvents, setPersonalEvents, setCompanyEvents } = useAppContext();
   const [type, setType] = useState<EventType>('leave');
   const [startDate, setStartDate] = useState(fmtDate(TODAY));
   const [endDate, setEndDate] = useState(fmtDate(TODAY));
@@ -36,7 +37,24 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
     ...(isAdmin ? [{ id: 'company' as EventType, label: '회사 일정', desc: '전사 공지' }] : []),
   ];
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!me) return;
+    if (type === 'company') {
+      const created = await eventsApi.createCompany({ title, startDate, endDate, type: 'event' });
+      setCompanyEvents([...companyEvents, created]);
+    } else if (type === 'leave' || type === 'half') {
+      const label = type === 'half' ? (half === 'AM' ? '오전 반차' : '오후 반차') : '연차';
+      const payload: Parameters<typeof eventsApi.createPersonal>[0] = {
+        userId: me.id,
+        type,
+        startDate,
+        endDate: type === 'half' ? startDate : endDate,
+        label,
+        ...(type === 'half' ? { half } : {}),
+      };
+      const created = await eventsApi.createPersonal(payload);
+      setPersonalEvents([...personalEvents, created]);
+    }
     onClose();
   };
 

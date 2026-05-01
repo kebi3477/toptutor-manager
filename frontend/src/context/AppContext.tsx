@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Member } from '../types';
+import { Member, CompanyEvent, PersonalEvent } from '../types';
 
 interface AppContextType {
   isAdmin: boolean;
@@ -8,6 +8,10 @@ interface AppContextType {
   setShowCreateEvent: (v: boolean) => void;
   members: Member[];
   setMembers: (v: Member[]) => void;
+  companyEvents: CompanyEvent[];
+  setCompanyEvents: (v: CompanyEvent[]) => void;
+  personalEvents: PersonalEvent[];
+  setPersonalEvents: (v: PersonalEvent[]) => void;
 }
 
 const AppContext = createContext<AppContextType>(null!);
@@ -20,9 +24,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
+  const [companyEvents, setCompanyEvents] = useState<CompanyEvent[]>([]);
+  const [personalEvents, setPersonalEvents] = useState<PersonalEvent[]>([]);
 
   return (
-    <AppContext.Provider value={{ isAdmin, setIsAdmin, showCreateEvent, setShowCreateEvent, members, setMembers }}>
+    <AppContext.Provider value={{
+      isAdmin, setIsAdmin,
+      showCreateEvent, setShowCreateEvent,
+      members, setMembers,
+      companyEvents, setCompanyEvents,
+      personalEvents, setPersonalEvents,
+    }}>
       {children}
     </AppContext.Provider>
   );

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { COMPANY_EVENTS, getMember, getTeam } from '../../data';
+import { getMember, getTeam } from '../../data';
 import { MealDay } from '../../types';
 import { mealsApi } from '../../api';
-import { TODAY, KOR_MONTHS, KOR_DAYS, fmtDate, parseDate, addDays, startOfWeek, isSameDay, dateInRange, daysBetween, todaysLeaves } from '../../utils/date';
+import { TODAY, KOR_MONTHS, KOR_DAYS, fmtDate, parseDate, addDays, startOfWeek, isSameDay, dateInRange, daysBetween, todaysLeaves, eventsOnDate } from '../../utils/date';
 import Avatar from '../../components/Avatar/Avatar';
 import Icon from '../../components/Icon/Icon';
 import { useAppContext } from '../../context/AppContext';
@@ -13,22 +13,22 @@ interface DashboardProps {
 }
 
 function Dashboard({ isAdmin }: DashboardProps) {
-  const { members } = useAppContext();
+  const { members, companyEvents, personalEvents } = useAppContext();
   const today = TODAY;
   const todayStr = `${today.getFullYear()}년 ${KOR_MONTHS[today.getMonth()]} ${today.getDate()}일`;
   const dayName = KOR_DAYS[today.getDay()] + '요일';
 
-  const todays = todaysLeaves();
-  const todayCompany = COMPANY_EVENTS.filter(e => {
+  const todays = todaysLeaves(personalEvents, today);
+  const todayCompany = companyEvents.filter(e => {
     if (e.startDate && e.endDate) return dateInRange(today, e.startDate, e.endDate);
     return e.date === fmtDate(today);
   });
 
   const weekStart = startOfWeek(today);
-  const weekEnd = addDays(weekStart, 6);
+  const weekEnd = addDays(weekStart, 4);
   const weekMealsKey = fmtDate(weekStart);
 
-  const upcoming = COMPANY_EVENTS
+  const upcoming = companyEvents
     .filter(e => {
       const d = parseDate(e.startDate || e.date!);
       return d >= today && daysBetween(fmtDate(today), e.startDate || e.date!) <= 21;

@@ -13,7 +13,7 @@ interface CalendarPageProps {
 type Filter = 'all' | 'company' | 'personal';
 
 function CalendarPage({ isAdmin }: CalendarPageProps) {
-  const { members } = useAppContext();
+  const { members, companyEvents, personalEvents } = useAppContext();
   const [cursor, setCursor] = useState(new Date(TODAY.getFullYear(), TODAY.getMonth(), 1));
   const [filter, setFilter] = useState<Filter>('all');
   const [selectedTeam, setSelectedTeam] = useState('all');
@@ -79,7 +79,7 @@ function CalendarPage({ isAdmin }: CalendarPageProps) {
             const inMonth = d.getMonth() === cursor.getMonth();
             const isToday = isSameDay(d, TODAY);
             const dow = d.getDay();
-            const { company, personal } = eventsOnDate(d);
+            const { company, personal } = eventsOnDate(d, companyEvents, personalEvents);
             const filteredPersonal = selectedTeam === 'all'
               ? personal
               : personal.filter(p => getMember(p.userId, members)?.teamId === selectedTeam);

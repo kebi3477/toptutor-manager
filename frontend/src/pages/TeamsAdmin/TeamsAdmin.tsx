@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getMember, membersByTeam } from '../../data';
-import { todaysLeaves } from '../../utils/date';
+import { TODAY, todaysLeaves } from '../../utils/date';
 import { teamsApi } from '../../api';
 import { Team } from '../../types';
 import Avatar from '../../components/Avatar/Avatar';
@@ -268,7 +268,7 @@ function InlineNameEditor({
 type Modal = { type: 'add' } | { type: 'editColor'; team: Team } | { type: 'delete'; team: Team };
 
 function TeamsAdmin() {
-  const { members } = useAppContext();
+  const { members, personalEvents } = useAppContext();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
@@ -286,7 +286,7 @@ function TeamsAdmin() {
   const team = teams.find(t => t.id === selectedId);
   const allMembers = selectedId ? membersByTeam(selectedId, members) : [];
   const filtered = search ? allMembers.filter(m => m.name.includes(search)) : allMembers;
-  const leaves = todaysLeaves();
+  const leaves = todaysLeaves(personalEvents, TODAY);
 
   const handleAdd = useCallback((added: Team) => {
     setTeams(prev => [...prev, added]);

@@ -13,7 +13,7 @@ import SignupPage from './pages/Signup/SignupPage';
 import Icon from './components/Icon/Icon';
 import CreateEventModal from './components/CreateEventModal/CreateEventModal';
 import { AppProvider, useAppContext } from './context/AppContext';
-import { membersApi } from './api';
+import { membersApi, eventsApi } from './api';
 import styles from './App.module.scss';
 
 // ── Page metadata keyed by pathname ─────────────────────────────────────────
@@ -41,11 +41,13 @@ function PublicRoute({ isLoggedIn }: { isLoggedIn: boolean }) {
 
 function AppShell() {
   const location = useLocation();
-  const { isAdmin, setIsAdmin, showCreateEvent, setShowCreateEvent, setMembers } = useAppContext();
+  const { isAdmin, setIsAdmin, showCreateEvent, setShowCreateEvent, setMembers, setCompanyEvents, setPersonalEvents } = useAppContext();
 
   useEffect(() => {
     membersApi.getAll().then(setMembers).catch(() => {});
-  }, [setMembers]);
+    eventsApi.getAllCompany().then(setCompanyEvents).catch(() => {});
+    eventsApi.getAllPersonal().then(setPersonalEvents).catch(() => {});
+  }, [setMembers, setCompanyEvents, setPersonalEvents]);
 
   const meta = PAGE_META[location.pathname] ?? { title: '' };
   const isCalendarish = location.pathname === '/dashboard' || location.pathname === '/calendar';
