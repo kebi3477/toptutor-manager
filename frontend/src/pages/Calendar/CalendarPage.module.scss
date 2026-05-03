@@ -184,6 +184,22 @@
   max-width: 260px;
 }
 
+.popoverActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--divider);
+}
+
+.popoverConfirm {
+  font-size: 12px;
+  color: var(--text-2);
+  flex: 1;
+}
+
 .popoverPerson {
   display: flex;
   align-items: center;

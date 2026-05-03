@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState } from 'react';
 import { Member, CompanyEvent, PersonalEvent } from '../types';
 
+export type EditingEvent =
+  | { kind: 'company'; event: CompanyEvent }
+  | { kind: 'personal'; event: PersonalEvent };
+
 interface AppContextType {
   isAdmin: boolean;
   setIsAdmin: (v: boolean) => void;
@@ -8,6 +12,8 @@ interface AppContextType {
   setShowCreateEvent: (v: boolean) => void;
   createEventInitialDate: string | null;
   setCreateEventInitialDate: (d: string | null) => void;
+  editingEvent: EditingEvent | null;
+  setEditingEvent: (v: EditingEvent | null) => void;
   members: Member[];
   setMembers: (v: Member[]) => void;
   companyEvents: CompanyEvent[];
@@ -26,6 +32,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [createEventInitialDate, setCreateEventInitialDate] = useState<string | null>(null);
+  const [editingEvent, setEditingEvent] = useState<EditingEvent | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [companyEvents, setCompanyEvents] = useState<CompanyEvent[]>([]);
   const [personalEvents, setPersonalEvents] = useState<PersonalEvent[]>([]);
@@ -35,6 +42,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       isAdmin, setIsAdmin,
       showCreateEvent, setShowCreateEvent,
       createEventInitialDate, setCreateEventInitialDate,
+      editingEvent, setEditingEvent,
       members, setMembers,
       companyEvents, setCompanyEvents,
       personalEvents, setPersonalEvents,

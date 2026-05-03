@@ -5,6 +5,7 @@ import Icon from '../../components/Icon/Icon';
 import EventChip from '../../components/EventChip/EventChip';
 import Avatar from '../../components/Avatar/Avatar';
 import { useAppContext } from '../../context/AppContext';
+import { eventsApi } from '../../api';
 import { CompanyEvent, PersonalEvent, Member } from '../../types';
 import styles from './CalendarPage.module.scss';
 
@@ -18,20 +19,34 @@ type ChipItem = { kind: 'company'; e: CompanyEvent } | { kind: 'personal'; e: Pe
 type ChipPopoverState = { item: ChipItem; x: number; y: number };
 type MorePopoverState = { date: Date; chips: ChipItem[]; x: number; y: number };
 
-// ── 이벤트 상세 팝오버 ───────────────────────────��──────────────
+// ── 이벤트 상세 팝오버 ────────────────────────────────────────
 
 function ChipDetailPopover({
   popover,
   members,
   onClose,
+  isAdmin,
+  onEdit,
+  onDelete,
 }: {
   popover: ChipPopoverState;
   members: Member[];
   onClose: () => void;
+  isAdmin: boolean;
+  onEdit: () => void;
+  onDelete: () => Promise<void>;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const { item, x, y } = popover;
   const left = Math.min(x, window.innerWidth - 264);
-  const top = Math.min(y, window.innerHeight - 160);
+  const top = Math.min(y, window.innerHeight - 200);
+  const canEdit = item.kind === 'personal' || isAdmin;
+
+  async function handleDelete() {
+    setDeleting(true);
+    await onDelete();
+  }
 
   return (
     <>
@@ -41,6 +56,28 @@ function ChipDetailPopover({
           <PersonalDetail event={item.e} members={members} />
         ) : (
           <CompanyDetail event={item.e} />
+        )}
+        {canEdit && (
+          <div className={styles.popoverActions}>
+            {confirmDelete ? (
+              <>
+                <span className={styles.popoverConfirm}>삭제하시겠습니까?</span>
+                <button className="btn btn-ghost" style={{ padding: '3px 10px', fontSize: 12 }} onClick={() => setConfirmDelete(false)} disabled={deleting} type="button">취소</button>
+                <button className="btn" style={{ background: 'var(--red)', color: '#fff', padding: '3px 10px', fontSize: 12 }} onClick={handleDelete} disabled={deleting} type="button">
+                  {deleting ? '...' : '삭제'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="btn btn-ghost btn-icon" title="수정" onClick={() => { onClose(); onEdit(); }} type="button">
+                  <Icon name="edit" size={14} />
+                </button>
+                <button className="btn btn-ghost btn-icon" title="삭제" style={{ color: 'var(--red)' }} onClick={() => setConfirmDelete(true)} type="button">
+                  <Icon name="trash" size={14} />
+                </button>
+              </>
+            )}
+          </div>
         )}
       </div>
     </>
@@ -148,7 +185,11 @@ function MoreEventsPopover({
 // ── 메인 컴포넌트 ──────────────────────────────────────────────
 
 function CalendarPage({ isAdmin }: CalendarPageProps) {
-  const { members, companyEvents, personalEvents, setShowCreateEvent, setCreateEventInitialDate } = useAppContext();
+  const {
+    members, companyEvents, personalEvents,
+    setCompanyEvents, setPersonalEvents,
+    setShowCreateEvent, setCreateEventInitialDate, setEditingEvent,
+  } = useAppContext();
   const [cursor, setCursor] = useState(new Date(TODAY.getFullYear(), TODAY.getMonth(), 1));
   const [filter, setFilter] = useState<Filter>('all');
   const [selectedTeam, setSelectedTeam] = useState('all');
@@ -177,6 +218,29 @@ function CalendarPage({ isAdmin }: CalendarPageProps) {
 
   function handleChipClickFromMore(item: ChipItem, x: number, y: number) {
     setChipPopover({ item, x, y });
+  }
+
+  function handleEditChip() {
+    if (!chipPopover) return;
+    const { item } = chipPopover;
+    setEditingEvent(item.kind === 'company'
+      ? { kind: 'company', event: item.e }
+      : { kind: 'personal', event: item.e }
+    );
+    setShowCreateEvent(true);
+  }
+
+  async function handleDeleteChip() {
+    if (!chipPopover) return;
+    const { item } = chipPopover;
+    if (item.kind === 'company') {
+      await eventsApi.removeCompany(item.e.id);
+      setCompanyEvents(companyEvents.filter(e => e.id !== item.e.id));
+    } else {
+      await eventsApi.removePersonal(item.e.id);
+      setPersonalEvents(personalEvents.filter(e => e.id !== item.e.id));
+    }
+    setChipPopover(null);
   }
 
   function closeAll() {
@@ -306,6 +370,9 @@ function CalendarPage({ isAdmin }: CalendarPageProps) {
           popover={chipPopover}
           members={members}
           onClose={() => setChipPopover(null)}
+          isAdmin={isAdmin}
+          onEdit={handleEditChip}
+          onDelete={handleDeleteChip}
         />
       )}
       {morePopover && (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getMember, getTeam } from '../../data';
 import { MealDay, CompanyEvent } from '../../types';
-import { mealsApi } from '../../api';
+import { mealsApi, eventsApi } from '../../api';
 import { TODAY, KOR_MONTHS, KOR_DAYS, fmtDate, parseDate, addDays, startOfWeek, isSameDay, dateInRange, daysBetween, todaysLeaves, eventsOnDate } from '../../utils/date';
 import Avatar from '../../components/Avatar/Avatar';
 import Icon from '../../components/Icon/Icon';
@@ -15,10 +15,18 @@ interface DashboardProps {
 function EventDetailPopover({
   detail,
   onClose,
+  isAdmin,
+  onEdit,
+  onDelete,
 }: {
   detail: { event: CompanyEvent; x: number; y: number };
   onClose: () => void;
+  isAdmin: boolean;
+  onEdit: () => void;
+  onDelete: () => Promise<void>;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const e = detail.event;
   const d = parseDate(e.startDate || e.date!);
   const typeLabel = e.type === 'holiday' ? '공휴일' : e.type === 'meeting' ? '회의' : '이벤트';
@@ -28,12 +36,17 @@ function EventDetailPopover({
       ? `${e.startDate} ~ ${e.endDate}`
       : e.startDate || e.date!;
 
+  async function handleDelete() {
+    setDeleting(true);
+    await onDelete();
+  }
+
   return (
     <>
       <div className={styles.popoverOverlay} onClick={onClose} />
       <div
         className={styles.eventPopover}
-        style={{ left: detail.x, top: Math.min(detail.y, window.innerHeight - 180) }}
+        style={{ left: detail.x, top: Math.min(detail.y, window.innerHeight - 220) }}
       >
         <div className={styles.epTitle}>{e.title}</div>
         <div className={styles.epMeta}>
@@ -55,13 +68,35 @@ function EventDetailPopover({
             </span>
           )}
         </div>
+        {isAdmin && (
+          <div className={styles.epActions}>
+            {confirmDelete ? (
+              <>
+                <span className={styles.epConfirm}>삭제하시겠습니까?</span>
+                <button className="btn btn-ghost" style={{ padding: '3px 10px', fontSize: 12 }} onClick={() => setConfirmDelete(false)} disabled={deleting} type="button">취소</button>
+                <button className="btn" style={{ background: 'var(--red)', color: '#fff', padding: '3px 10px', fontSize: 12 }} onClick={handleDelete} disabled={deleting} type="button">
+                  {deleting ? '...' : '삭제'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="btn btn-ghost btn-icon" title="수정" onClick={() => { onClose(); onEdit(); }} type="button">
+                  <Icon name="edit" size={14} />
+                </button>
+                <button className="btn btn-ghost btn-icon" title="삭제" style={{ color: 'var(--red)' }} onClick={() => setConfirmDelete(true)} type="button">
+                  <Icon name="trash" size={14} />
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
 }
 
 function Dashboard({ isAdmin }: DashboardProps) {
-  const { members, companyEvents, personalEvents } = useAppContext();
+  const { members, companyEvents, personalEvents, setCompanyEvents, setEditingEvent, setShowCreateEvent } = useAppContext();
   const today = TODAY;
   const todayStr = `${today.getFullYear()}년 ${KOR_MONTHS[today.getMonth()]} ${today.getDate()}일`;
   const dayName = KOR_DAYS[today.getDay()] + '요일';
@@ -87,6 +122,20 @@ function Dashboard({ isAdmin }: DashboardProps) {
   const [weekMeals, setWeekMeals] = useState<MealDay[]>([]);
   const [mealsLoading, setMealsLoading] = useState(true);
   const [detailEvent, setDetailEvent] = useState<{ event: CompanyEvent; x: number; y: number } | null>(null);
+
+  function handleEditEvent() {
+    if (!detailEvent) return;
+    setEditingEvent({ kind: 'company', event: detailEvent.event });
+    setShowCreateEvent(true);
+    setDetailEvent(null);
+  }
+
+  async function handleDeleteEvent() {
+    if (!detailEvent) return;
+    await eventsApi.removeCompany(detailEvent.event.id);
+    setCompanyEvents(companyEvents.filter(e => e.id !== detailEvent.event.id));
+    setDetailEvent(null);
+  }
 
   useEffect(() => {
     setMealsLoading(true);
@@ -281,7 +330,15 @@ function Dashboard({ isAdmin }: DashboardProps) {
           </div>
         </div>
       </div>
-      {detailEvent && <EventDetailPopover detail={detailEvent} onClose={() => setDetailEvent(null)} />}
+      {detailEvent && (
+        <EventDetailPopover
+          detail={detailEvent}
+          onClose={() => setDetailEvent(null)}
+          isAdmin={isAdmin}
+          onEdit={handleEditEvent}
+          onDelete={handleDeleteEvent}
+        />
+      )}
     </div>
   );
 }
