@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getMember, getTeam } from '../../data';
-import { MealDay } from '../../types';
+import { MealDay, CompanyEvent } from '../../types';
 import { mealsApi } from '../../api';
 import { TODAY, KOR_MONTHS, KOR_DAYS, fmtDate, parseDate, addDays, startOfWeek, isSameDay, dateInRange, daysBetween, todaysLeaves, eventsOnDate } from '../../utils/date';
 import Avatar from '../../components/Avatar/Avatar';
@@ -10,6 +10,54 @@ import styles from './Dashboard.module.scss';
 
 interface DashboardProps {
   isAdmin: boolean;
+}
+
+function EventDetailPopover({
+  detail,
+  onClose,
+}: {
+  detail: { event: CompanyEvent; x: number; y: number };
+  onClose: () => void;
+}) {
+  const e = detail.event;
+  const d = parseDate(e.startDate || e.date!);
+  const typeLabel = e.type === 'holiday' ? '공휴일' : e.type === 'meeting' ? '회의' : '이벤트';
+  const chipCls = e.type === 'holiday' ? 'chip-holiday' : e.type === 'meeting' ? 'chip-meeting' : 'chip-event';
+  const dateStr =
+    e.startDate && e.endDate && e.startDate !== e.endDate
+      ? `${e.startDate} ~ ${e.endDate}`
+      : e.startDate || e.date!;
+
+  return (
+    <>
+      <div className={styles.popoverOverlay} onClick={onClose} />
+      <div
+        className={styles.eventPopover}
+        style={{ left: detail.x, top: Math.min(detail.y, window.innerHeight - 180) }}
+      >
+        <div className={styles.epTitle}>{e.title}</div>
+        <div className={styles.epMeta}>
+          <span className={`chip ${chipCls}`}>{typeLabel}</span>
+          <span className={styles.epRow}>
+            <Icon name="calendar" size={12} />
+            {dateStr} ({KOR_DAYS[d.getDay()]}요일)
+          </span>
+          {e.time && (
+            <span className={styles.epRow}>
+              <Icon name="clock" size={12} />
+              {e.time}
+            </span>
+          )}
+          {e.location && (
+            <span className={styles.epRow}>
+              <Icon name="pin" size={12} />
+              {e.location}
+            </span>
+          )}
+        </div>
+      </div>
+    </>
+  );
 }
 
 function Dashboard({ isAdmin }: DashboardProps) {
@@ -38,6 +86,7 @@ function Dashboard({ isAdmin }: DashboardProps) {
 
   const [weekMeals, setWeekMeals] = useState<MealDay[]>([]);
   const [mealsLoading, setMealsLoading] = useState(true);
+  const [detailEvent, setDetailEvent] = useState<{ event: CompanyEvent; x: number; y: number } | null>(null);
 
   useEffect(() => {
     setMealsLoading(true);
@@ -162,7 +211,15 @@ function Dashboard({ isAdmin }: DashboardProps) {
                 const d = parseDate(e.startDate || e.date!);
                 const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
                 return (
-                  <div key={e.id} className={styles.upcomingItem}>
+                  <div
+                    key={e.id}
+                    className={styles.upcomingItem}
+                    role="button"
+                    onClick={ev => {
+                      const rect = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+                      setDetailEvent({ event: e, x: Math.min(rect.left, window.innerWidth - 288), y: rect.bottom + 6 });
+                    }}
+                  >
                     <div className={styles.upcomingDate}>
                       <div className={`${styles.upcomingDay} tnum`}>{d.getDate()}</div>
                       <div className={styles.upcomingMonth}>{KOR_MONTHS[d.getMonth()]}</div>
@@ -224,6 +281,7 @@ function Dashboard({ isAdmin }: DashboardProps) {
           </div>
         </div>
       </div>
+      {detailEvent && <EventDetailPopover detail={detailEvent} onClose={() => setDetailEvent(null)} />}
     </div>
   );
 }

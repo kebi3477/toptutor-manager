@@ -189,9 +189,16 @@
   gap: 12px;
   padding: 10px 6px;
   border-bottom: 1px solid var(--divider);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.1s;
 
   &:last-child {
     border-bottom: 0;
+  }
+
+  &:hover {
+    background: var(--surface-2);
   }
 }
 
@@ -236,6 +243,48 @@
   background: var(--brand-soft);
   padding: 3px 8px;
   border-radius: 999px;
+}
+
+/* Event detail popover */
+.popoverOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+.eventPopover {
+  position: fixed;
+  z-index: 201;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 14px 16px;
+  min-width: 240px;
+  max-width: 280px;
+}
+
+.epTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.epMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.epRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Meal week preview */
