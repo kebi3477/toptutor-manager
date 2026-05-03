@@ -102,8 +102,8 @@ function Dashboard({ isAdmin }: DashboardProps) {
                         </div>
                       </div>
                       <div className={styles.leaveCardMeta}>
-                        <span className={`chip ${e.type === 'half' ? 'chip-half' : 'chip-leave'}`}>
-                          {e.type === 'half' ? (e.half === 'AM' ? '오전 반차' : '오후 반차') : '연차'}
+                        <span className={`chip ${e.type === 'half' ? 'chip-half' : e.type === 'trip' ? 'chip-trip' : 'chip-leave'}`}>
+                          {e.type === 'half' ? (e.half === 'AM' ? '오전 반차' : '오후 반차') : e.type === 'trip' ? e.label : '연차'}
                         </span>
                         <span className={`${styles.leaveReturn} tnum`}>
                           {isNextDay ? '내일 복귀' : `${returnDate.getMonth() + 1}/${returnDate.getDate()} 복귀`}

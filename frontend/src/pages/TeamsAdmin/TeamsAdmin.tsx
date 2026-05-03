@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getMember, membersByTeam } from '../../data';
 import { TODAY, todaysLeaves } from '../../utils/date';
-import { teamsApi } from '../../api';
-import { Team } from '../../types';
+import { teamsApi, membersApi } from '../../api';
+import { Team, Member } from '../../types';
 import Avatar from '../../components/Avatar/Avatar';
 import Icon from '../../components/Icon/Icon';
 import { useAppContext } from '../../context/AppContext';
@@ -264,11 +264,201 @@ function InlineNameEditor({
   );
 }
 
+// ── 팀원 배정 모달 ────────────────────────────────────────────
+function AssignMembersModal({
+  team,
+  allMembers,
+  teams,
+  onClose,
+  onAssign,
+}: {
+  team: Team;
+  allMembers: Member[];
+  teams: Team[];
+  onClose: () => void;
+  onAssign: (updated: Member[]) => void;
+}) {
+  const unassigned = allMembers.filter(m => m.teamId !== team.id);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const filtered = search ? unassigned.filter(m => m.name.includes(search)) : unassigned;
+
+  const toggle = (id: string) =>
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  async function handleAssign() {
+    if (selected.length === 0) { onClose(); return; }
+    setLoading(true);
+    try {
+      const updated = await Promise.all(
+        selected.map(id => membersApi.update(id, { teamId: team.id }))
+      );
+      onAssign(updated);
+      onClose();
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{ width: 480 }}>
+        <div className="modal-hd">
+          <h2>{team.name} 팀원 배정</h2>
+          <button className="btn btn-icon btn-ghost" onClick={onClose} type="button"><Icon name="x" /></button>
+        </div>
+        <div className="modal-bd">
+          <div className="search-box" style={{ marginBottom: 12 }}>
+            <Icon name="search" size={13} />
+            <input className="search-input" placeholder="이름으로 검색" value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          {filtered.length === 0 ? (
+            <p className="empty" style={{ padding: '16px 0' }}>
+              {unassigned.length === 0 ? '모든 멤버가 이미 이 팀에 속해 있습니다.' : '검색 결과가 없습니다.'}
+            </p>
+          ) : (
+            <div style={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {filtered.map(m => {
+                const t = teams.find(x => x.id === m.teamId);
+                const checked = selected.includes(m.id);
+                return (
+                  <label
+                    key={m.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
+                      background: checked ? 'var(--divider)' : 'transparent',
+                    }}
+                  >
+                    <input type="checkbox" className="cb" checked={checked} onChange={() => toggle(m.id)} />
+                    <Avatar member={m} />
+                    <span style={{ fontWeight: 600, flex: 1 }}>{m.name}</span>
+                    {t && (
+                      <span style={{ fontSize: 12, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.color, display: 'inline-block' }} />
+                        {t.name}
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        <div className="modal-ft">
+          <button className="btn btn-ghost" onClick={onClose} type="button">취소</button>
+          <button className="btn btn-primary" onClick={handleAssign} disabled={loading || selected.length === 0} type="button">
+            <Icon name="check" size={14} /> {loading ? '처리 중…' : `${selected.length}명 배정`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 팀원 수정 모달 ────────────────────────────────────────────
+function EditMemberModal({
+  member,
+  teams,
+  onClose,
+  onSave,
+}: {
+  member: Member;
+  teams: Team[];
+  onClose: () => void;
+  onSave: (id: string, data: { name: string; teamId: string; role: Member['role'] }) => Promise<void>;
+}) {
+  const [name, setName] = useState(member.name);
+  const [teamId, setTeamId] = useState(member.teamId);
+  const [role, setRole] = useState<Member['role']>(member.role);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSave() {
+    if (!name.trim()) { setError('이름을 입력해주세요.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      await onSave(member.id, { name: name.trim(), teamId, role });
+      onClose();
+    } catch {
+      setError('저장 중 오류가 발생했습니다.');
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()} style={{ width: 520 }}>
+        <div className="modal-hd">
+          <h2>{member.name} 정보 수정</h2>
+          <button className="btn btn-icon btn-ghost" onClick={onClose} disabled={loading} type="button"><Icon name="x" /></button>
+        </div>
+        <div className="modal-bd">
+          <div className="field">
+            <label className="field-label">이름</label>
+            <input
+              className="input"
+              value={name}
+              onChange={e => { setName(e.target.value); setError(''); }}
+              placeholder="홍길동"
+              disabled={loading}
+            />
+          </div>
+          <div className="field">
+            <label className="field-label">소속 팀</label>
+            <div className="team-select-grid">
+              {teams.map(t => (
+                <button
+                  key={t.id}
+                  className={`team-select-chip ${teamId === t.id ? 'active' : ''}`}
+                  onClick={() => setTeamId(t.id)}
+                  disabled={loading}
+                  type="button"
+                >
+                  <span className="team-row-color" style={{ background: t.color }} />
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="field">
+            <label className="field-label">역할</label>
+            <div className="seg" style={{ width: '100%' }}>
+              {(['팀장', '매니저', '사원'] as const).map(r => (
+                <button
+                  key={r}
+                  className={`seg-btn ${role === r ? 'active' : ''}`}
+                  onClick={() => setRole(r)}
+                  style={{ flex: 1 }}
+                  disabled={loading}
+                  type="button"
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+          {error && <div style={{ color: 'var(--red)', fontSize: 12.5 }}>{error}</div>}
+        </div>
+        <div className="modal-ft">
+          <button className="btn btn-ghost" onClick={onClose} disabled={loading} type="button">취소</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={loading} type="button">
+            {loading ? '처리 중...' : <><Icon name="check" size={14} /> 저장</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── 메인 컴포넌트 ─────────────────────────────────────────────
-type Modal = { type: 'add' } | { type: 'editColor'; team: Team } | { type: 'delete'; team: Team };
+type Modal = { type: 'add' } | { type: 'editColor'; team: Team } | { type: 'delete'; team: Team } | { type: 'assign' } | { type: 'editMember'; member: Member };
 
 function TeamsAdmin() {
-  const { members, personalEvents } = useAppContext();
+  const { members, personalEvents, setMembers } = useAppContext();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
@@ -309,6 +499,18 @@ function TeamsAdmin() {
       return next;
     });
   }, [selectedId]);
+
+  const handleAssign = useCallback((updated: Member[]) => {
+    setMembers(members.map(m => {
+      const u = updated.find(r => r.id === m.id);
+      return u ?? m;
+    }));
+  }, [members, setMembers]);
+
+  const handleMemberSave = useCallback(async (id: string, data: { name: string; teamId: string; role: Member['role'] }) => {
+    const updated = await membersApi.update(id, data);
+    setMembers(members.map(m => m.id === updated.id ? { ...m, ...updated } : m));
+  }, [members, setMembers]);
 
   if (loading) {
     return <div className={styles.content}><div className="muted" style={{ padding: 32 }}>팀 목록을 불러오는 중...</div></div>;
@@ -416,7 +618,7 @@ function TeamsAdmin() {
                     <Icon name="search" size={13} />
                     <input className="search-input" placeholder="이름으로 검색" value={search} onChange={e => setSearch(e.target.value)} />
                   </div>
-                  <button className="btn btn-primary"><Icon name="plus" size={14} /> 팀원 배정</button>
+                  <button className="btn btn-primary" onClick={() => setModal({ type: 'assign' })} type="button"><Icon name="plus" size={14} /> 팀원 배정</button>
                 </div>
               </div>
               <table className="user-table">
@@ -443,18 +645,15 @@ function TeamsAdmin() {
                         </td>
                         <td>
                           {leave ? (
-                            <span className={`chip ${leave.type === 'half' ? 'chip-half' : 'chip-leave'}`}>
-                              {leave.type === 'half' ? (leave.half === 'AM' ? '오전 반차' : '오후 반차') : '연차'}
+                            <span className={`chip ${leave.type === 'half' ? 'chip-half' : leave.type === 'trip' ? 'chip-trip' : 'chip-leave'}`}>
+                              {leave.type === 'half' ? (leave.half === 'AM' ? '오전 반차' : '오후 반차') : leave.type === 'trip' ? leave.label : '연차'}
                             </span>
                           ) : (
                             <span className="muted" style={{ fontSize: 12 }}>출근</span>
                           )}
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <button className="btn btn-ghost btn-icon"><Icon name="edit" size={14} /></button>
-                          <button className="btn btn-ghost btn-icon" style={{ color: 'var(--text-3)' }}>
-                            <Icon name="chevron-right" size={14} />
-                          </button>
+                          <button className="btn btn-ghost btn-icon" onClick={() => setModal({ type: 'editMember', member: m })} type="button"><Icon name="edit" size={14} /></button>
                         </td>
                       </tr>
                     );
@@ -489,6 +688,23 @@ function TeamsAdmin() {
           memberCount={membersByTeam(modal.team.id, members).length}
           onClose={() => setModal(null)}
           onDelete={() => handleDelete(modal.team.id)}
+        />
+      )}
+      {modal?.type === 'assign' && team && (
+        <AssignMembersModal
+          team={team}
+          allMembers={members}
+          teams={teams}
+          onClose={() => setModal(null)}
+          onAssign={handleAssign}
+        />
+      )}
+      {modal?.type === 'editMember' && (
+        <EditMemberModal
+          member={modal.member}
+          teams={teams}
+          onClose={() => setModal(null)}
+          onSave={handleMemberSave}
         />
       )}
     </div>

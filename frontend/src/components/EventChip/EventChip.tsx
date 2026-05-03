@@ -35,9 +35,10 @@ function EventChip(props: EventChipProps) {
   const member = getMember(event.userId, members);
   if (!member) return null;
   const team = getTeam(member.teamId);
-  const cls = event.type === 'half' ? 'chip-half' : 'chip-leave';
+  const cls = event.type === 'half' ? 'chip-half' : event.type === 'trip' ? 'chip-trip' : 'chip-leave';
   const label = event.type === 'half'
     ? (event.half === 'AM' ? '오전반차' : '오후반차')
+    : event.type === 'trip' ? event.label
     : '연차';
 
   return (

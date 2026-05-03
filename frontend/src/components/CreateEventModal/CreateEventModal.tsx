@@ -54,6 +54,15 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
       };
       const created = await eventsApi.createPersonal(payload);
       setPersonalEvents([...personalEvents, created]);
+    } else if (type === 'personal-event') {
+      const created = await eventsApi.createPersonal({
+        userId: me.id,
+        type: 'trip',
+        startDate,
+        endDate,
+        label: title.trim() || '외근/출장',
+      });
+      setPersonalEvents([...personalEvents, created]);
     }
     onClose();
   };

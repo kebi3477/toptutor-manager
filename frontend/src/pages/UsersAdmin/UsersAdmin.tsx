@@ -384,8 +384,8 @@ function UsersAdmin() {
                   </td>
                   <td>
                     {leave ? (
-                      <span className={`chip ${leave.type === 'half' ? 'chip-half' : 'chip-leave'}`}>
-                        {leave.type === 'half' ? (leave.half === 'AM' ? '오전 반차' : '오후 반차') : '연차'}
+                      <span className={`chip ${leave.type === 'half' ? 'chip-half' : leave.type === 'trip' ? 'chip-trip' : 'chip-leave'}`}>
+                        {leave.type === 'half' ? (leave.half === 'AM' ? '오전 반차' : '오후 반차') : leave.type === 'trip' ? leave.label : '연차'}
                       </span>
                     ) : (
                       <span className="muted" style={{ fontSize: 12 }}>출근</span>

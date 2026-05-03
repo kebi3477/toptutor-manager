@@ -37,7 +37,7 @@ export interface CompanyEvent {
 export interface PersonalEvent {
   id: string;
   userId: string;
-  type: 'leave' | 'half';
+  type: 'leave' | 'half' | 'trip';
   startDate: string;
   endDate: string;
   half?: 'AM' | 'PM';
@@ -58,7 +58,7 @@ export interface CreateCompanyEventPayload {
 export interface CreatePersonalEventPayload {
   id?: string;
   userId: string;
-  type: 'leave' | 'half';
+  type: 'leave' | 'half' | 'trip';
   startDate: string;
   endDate: string;
   half?: 'AM' | 'PM';
