@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Avatar from '../Avatar/Avatar';
 import Icon from '../Icon/Icon';
 import { getTeam } from '../../data';
@@ -16,13 +16,24 @@ interface CreateEventModalProps {
 }
 
 function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
-  const { members, companyEvents, personalEvents, setPersonalEvents, setCompanyEvents } = useAppContext();
+  const { members, companyEvents, personalEvents, setPersonalEvents, setCompanyEvents, createEventInitialDate } = useAppContext();
   const [type, setType] = useState<EventType>('leave');
   const [startDate, setStartDate] = useState(fmtDate(TODAY));
   const [endDate, setEndDate] = useState(fmtDate(TODAY));
   const [half, setHalf] = useState<'AM' | 'PM'>('AM');
   const [title, setTitle] = useState('');
   const [memo, setMemo] = useState('');
+
+  useEffect(() => {
+    if (!open) return;
+    const d = createEventInitialDate ?? fmtDate(TODAY);
+    setStartDate(d);
+    setEndDate(d);
+    setType('leave');
+    setTitle('');
+    setMemo('');
+    setHalf('AM');
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;
 

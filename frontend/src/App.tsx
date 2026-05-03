@@ -41,7 +41,7 @@ function PublicRoute({ isLoggedIn }: { isLoggedIn: boolean }) {
 
 function AppShell() {
   const location = useLocation();
-  const { isAdmin, setIsAdmin, showCreateEvent, setShowCreateEvent, setMembers, setCompanyEvents, setPersonalEvents } = useAppContext();
+  const { isAdmin, setIsAdmin, showCreateEvent, setShowCreateEvent, setCreateEventInitialDate, setMembers, setCompanyEvents, setPersonalEvents } = useAppContext();
 
   useEffect(() => {
     membersApi.getAll().then(setMembers).catch(() => {});
@@ -66,7 +66,7 @@ function AppShell() {
     <div className="row" style={{ gap: 8 }}>
       {adminToggle}
       {isCalendarish && (
-        <button className="btn btn-primary" onClick={() => setShowCreateEvent(true)}>
+        <button className="btn btn-primary" onClick={() => { setCreateEventInitialDate(null); setShowCreateEvent(true); }}>
           <Icon name="plus" size={14} /> 일정 등록
         </button>
       )}

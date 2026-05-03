@@ -6,6 +6,8 @@ interface AppContextType {
   setIsAdmin: (v: boolean) => void;
   showCreateEvent: boolean;
   setShowCreateEvent: (v: boolean) => void;
+  createEventInitialDate: string | null;
+  setCreateEventInitialDate: (d: string | null) => void;
   members: Member[];
   setMembers: (v: Member[]) => void;
   companyEvents: CompanyEvent[];
@@ -23,6 +25,7 @@ export function useAppContext() {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [createEventInitialDate, setCreateEventInitialDate] = useState<string | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [companyEvents, setCompanyEvents] = useState<CompanyEvent[]>([]);
   const [personalEvents, setPersonalEvents] = useState<PersonalEvent[]>([]);
@@ -31,6 +34,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{
       isAdmin, setIsAdmin,
       showCreateEvent, setShowCreateEvent,
+      createEventInitialDate, setCreateEventInitialDate,
       members, setMembers,
       companyEvents, setCompanyEvents,
       personalEvents, setPersonalEvents,
