@@ -16,7 +16,7 @@ export interface UpdateTeamPayload {
   color?: string;
 }
 
-export interface Member {
+export interface User {
   id: string;
   name: string;
   teamId: string | null;

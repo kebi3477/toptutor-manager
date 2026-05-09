@@ -13,7 +13,7 @@ import SignupPage from './pages/Signup/SignupPage';
 import Icon from './components/Icon/Icon';
 import CreateEventModal from './components/CreateEventModal/CreateEventModal';
 import { AppProvider, useAppContext } from './context/AppContext';
-import { membersApi, eventsApi } from './api';
+import { usersApi, eventsApi } from './api';
 import type { AuthUser } from './types';
 import styles from './App.module.scss';
 
@@ -42,13 +42,13 @@ function PublicRoute({ isLoggedIn }: { isLoggedIn: boolean }) {
 
 function AppShell() {
   const location = useLocation();
-  const { isAdmin, showCreateEvent, setShowCreateEvent, setCreateEventInitialDate, setMembers, setCompanyEvents, setPersonalEvents } = useAppContext();
+  const { isAdmin, showCreateEvent, setShowCreateEvent, setCreateEventInitialDate, setUsers, setCompanyEvents, setPersonalEvents } = useAppContext();
 
   useEffect(() => {
-    membersApi.getAll().then(setMembers).catch(() => {});
+    usersApi.getAll().then(setUsers).catch(() => {});
     eventsApi.getAllCompany().then(setCompanyEvents).catch(() => {});
     eventsApi.getAllPersonal().then(setPersonalEvents).catch(() => {});
-  }, [setMembers, setCompanyEvents, setPersonalEvents]);
+  }, [setUsers, setCompanyEvents, setPersonalEvents]);
 
   const meta = PAGE_META[location.pathname] ?? { title: '' };
   const isCalendarish = location.pathname === '/dashboard' || location.pathname === '/calendar';

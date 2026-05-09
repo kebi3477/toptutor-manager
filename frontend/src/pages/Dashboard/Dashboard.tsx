@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getMember, getTeam } from '../../data';
+import { getUser, getTeam } from '../../data';
 import { MealDay, CompanyEvent } from '../../types';
 import { mealsApi, eventsApi } from '../../api';
 import { TODAY, KOR_MONTHS, KOR_DAYS, fmtDate, parseDate, addDays, startOfWeek, isSameDay, dateInRange, daysBetween, todaysLeaves, eventsOnDate } from '../../utils/date';
@@ -96,7 +96,7 @@ function EventDetailPopover({
 }
 
 function Dashboard({ isAdmin }: DashboardProps) {
-  const { members, companyEvents, personalEvents, setCompanyEvents, setEditingEvent, setShowCreateEvent } = useAppContext();
+  const { users, companyEvents, personalEvents, setCompanyEvents, setEditingEvent, setShowCreateEvent } = useAppContext();
   const today = TODAY;
   const todayStr = `${today.getFullYear()}년 ${KOR_MONTHS[today.getMonth()]} ${today.getDate()}일`;
   const dayName = KOR_DAYS[today.getDay()] + '요일';
@@ -164,7 +164,7 @@ function Dashboard({ isAdmin }: DashboardProps) {
           </div>
           <div className={styles.statSep} />
           <div className={styles.stat}>
-            <div className={`${styles.statNum} tnum`}>{members.length - todays.length}</div>
+            <div className={`${styles.statNum} tnum`}>{users.length - todays.length}</div>
             <div className={styles.statLbl}>정상 출근</div>
           </div>
         </div>
@@ -185,7 +185,7 @@ function Dashboard({ isAdmin }: DashboardProps) {
             ) : (
               <div className={styles.leaveGrid}>
                 {todays.map(e => {
-                  const m = getMember(e.userId, members);
+                  const m = getUser(e.userId, users);
                   if (!m) return null;
                   const t = m.teamId ? getTeam(m.teamId) : null;
                   const returnDate = addDays(parseDate(e.endDate), 1);
@@ -193,7 +193,7 @@ function Dashboard({ isAdmin }: DashboardProps) {
                   return (
                     <div key={e.id} className={styles.leaveCard}>
                       <div className={styles.leaveCardHead}>
-                        <Avatar member={m} size="lg" />
+                        <Avatar user={m} size="lg" />
                         <div style={{ minWidth: 0 }}>
                           <div className={styles.leaveCardName}>{m.name}</div>
                           <div className={styles.leaveCardTeam}>{t?.name ?? '—'}</div>

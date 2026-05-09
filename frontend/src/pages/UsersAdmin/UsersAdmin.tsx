@@ -1,28 +1,28 @@
 import React, { useState } from 'react';
-import { TEAMS, getTeam, membersByTeam } from '../../data';
+import { TEAMS, getTeam, usersByTeam } from '../../data';
 import { TODAY, todaysLeaves } from '../../utils/date';
-import { Member } from '../../types';
+import { User } from '../../types';
 import Avatar from '../../components/Avatar/Avatar';
 import Icon from '../../components/Icon/Icon';
 import { useAppContext } from '../../context/AppContext';
-import { membersApi } from '../../api';
+import { usersApi } from '../../api';
 import styles from './UsersAdmin.module.scss';
 
 // ── 사용자 추가/수정 모달 ────────────────────────────────────────
 
 interface UserEditModalProps {
-  member?: Member;
+  user?: User;
   onClose: () => void;
-  onSave: (data: { name: string; teamId: string; role: Member['role']; isAdmin: boolean }) => Promise<void>;
+  onSave: (data: { name: string; teamId: string; role: User['role']; isAdmin: boolean }) => Promise<void>;
   onDelete?: () => Promise<void>;
   mode: 'add' | 'edit';
 }
 
-function UserEditModal({ member, onClose, onSave, onDelete, mode }: UserEditModalProps) {
-  const [name, setName] = useState(member?.name || '');
-  const [team, setTeam] = useState(member?.teamId || TEAMS[0].id);
-  const [role, setRole] = useState<Member['role']>(member?.role || '사원');
-  const [isAdmin, setIsAdmin] = useState(member?.isAdmin ?? false);
+function UserEditModal({ user, onClose, onSave, onDelete, mode }: UserEditModalProps) {
+  const [name, setName] = useState(user?.name || '');
+  const [team, setTeam] = useState(user?.teamId || TEAMS[0].id);
+  const [role, setRole] = useState<User['role']>(user?.role || '사원');
+  const [isAdmin, setIsAdmin] = useState(user?.isAdmin ?? false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,7 +40,7 @@ function UserEditModal({ member, onClose, onSave, onDelete, mode }: UserEditModa
 
   const handleDelete = async () => {
     if (!onDelete) return;
-    if (!window.confirm(`${member?.name}을(를) 삭제하시겠습니까?`)) return;
+    if (!window.confirm(`${user?.name}을(를) 삭제하시겠습니까?`)) return;
     setLoading(true);
     try {
       await onDelete();
@@ -54,7 +54,7 @@ function UserEditModal({ member, onClose, onSave, onDelete, mode }: UserEditModa
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ width: 520 }}>
         <div className="modal-hd">
-          <h2>{mode === 'add' ? '사용자 추가' : `${member?.name} 정보 수정`}</h2>
+          <h2>{mode === 'add' ? '사용자 추가' : `${user?.name} 정보 수정`}</h2>
           <button className="btn btn-icon btn-ghost" onClick={onClose} disabled={loading}><Icon name="x" /></button>
         </div>
         <div className="modal-bd">
@@ -167,7 +167,7 @@ function BulkTeamSelect({ onSelect, disabled }: { onSelect: (teamId: string) => 
 
 // ── 일괄 역할 변경 드롭다운 ─────────────────────────────────────
 
-function BulkRoleSelect({ onSelect, disabled }: { onSelect: (role: Member['role']) => void; disabled?: boolean }) {
+function BulkRoleSelect({ onSelect, disabled }: { onSelect: (role: User['role']) => void; disabled?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ position: 'relative' }}>
@@ -190,26 +190,26 @@ function BulkRoleSelect({ onSelect, disabled }: { onSelect: (role: Member['role'
 // ── 메인 컴포넌트 ────────────────────────────────────────────────
 
 function UsersAdmin() {
-  const { members, setMembers, personalEvents } = useAppContext();
+  const { users, setUsers, personalEvents } = useAppContext();
   const [search, setSearch] = useState('');
   const [teamFilter, setTeamFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [editing, setEditing] = useState<Member | null>(null);
+  const [editing, setEditing] = useState<User | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  const filtered = members.filter(m => {
+  const filtered = users.filter(m => {
     if (search && !m.name.includes(search)) return false;
     if (teamFilter !== 'all' && (m.teamId ?? '') !== teamFilter) return false;
     if (roleFilter !== 'all' && m.role !== roleFilter) return false;
     return true;
   });
 
-  const allChecked = filtered.length > 0 && filtered.every(m => selectedIds.includes(m.id));
+  const allChecked = filtered.length > 0 && filtered.every(u => selectedIds.includes(u.id));
   const toggleAll = () => {
-    if (allChecked) setSelectedIds(selectedIds.filter(id => !filtered.find(m => m.id === id)));
-    else setSelectedIds(Array.from(new Set([...selectedIds, ...filtered.map(m => m.id)])));
+    if (allChecked) setSelectedIds(selectedIds.filter(id => !filtered.find(u => u.id === id)));
+    else setSelectedIds(Array.from(new Set([...selectedIds, ...filtered.map(u => u.id)])));
   };
   const toggleOne = (id: string) => {
     setSelectedIds(selectedIds.includes(id) ? selectedIds.filter(x => x !== id) : [...selectedIds, id]);
@@ -217,23 +217,23 @@ function UsersAdmin() {
 
   // ── 단건 저장 ──────────────────────────────────────────────────
 
-  const handleAdd = async (data: { name: string; teamId: string; role: Member['role']; isAdmin: boolean }) => {
-    const created = await membersApi.create(data);
-    setMembers([...members, created]);
+  const handleAdd = async (data: { name: string; teamId: string; role: User['role']; isAdmin: boolean }) => {
+    const created = await usersApi.create(data);
+    setUsers([...users, created]);
     setShowAdd(false);
   };
 
-  const handleEdit = async (data: { name: string; teamId: string; role: Member['role']; isAdmin: boolean }) => {
+  const handleEdit = async (data: { name: string; teamId: string; role: User['role']; isAdmin: boolean }) => {
     if (!editing) return;
-    const updated = await membersApi.update(editing.id, data);
-    setMembers(members.map(m => m.id === updated.id ? { ...m, ...updated } : m));
+    const updated = await usersApi.update(editing.id, data);
+    setUsers(users.map(u => u.id === updated.id ? { ...u, ...updated } : u));
     setEditing(null);
   };
 
   const handleDelete = async () => {
     if (!editing) return;
-    await membersApi.remove(editing.id);
-    setMembers(members.filter(m => m.id !== editing.id));
+    await usersApi.remove(editing.id);
+    setUsers(users.filter(u => u.id !== editing.id));
     setSelectedIds(selectedIds.filter(id => id !== editing.id));
     setEditing(null);
   };
@@ -244,11 +244,11 @@ function UsersAdmin() {
     setBulkLoading(true);
     try {
       const updated = await Promise.all(
-        selectedIds.map(id => membersApi.update(id, { teamId }))
+        selectedIds.map(id => usersApi.update(id, { teamId }))
       );
-      setMembers(members.map(m => {
-        const u = updated.find(r => r.id === m.id);
-        return u ?? m;
+      setUsers(users.map(u => {
+        const r = updated.find(x => x.id === u.id);
+        return r ?? u;
       }));
       setSelectedIds([]);
       setTeamFilter('all');
@@ -257,15 +257,15 @@ function UsersAdmin() {
     }
   };
 
-  const handleBulkRoleChange = async (role: Member['role']) => {
+  const handleBulkRoleChange = async (role: User['role']) => {
     setBulkLoading(true);
     try {
       const updated = await Promise.all(
-        selectedIds.map(id => membersApi.update(id, { role }))
+        selectedIds.map(id => usersApi.update(id, { role }))
       );
-      setMembers(members.map(m => {
-        const u = updated.find(r => r.id === m.id);
-        return u ?? m;
+      setUsers(users.map(u => {
+        const r = updated.find(x => x.id === u.id);
+        return r ?? u;
       }));
       setSelectedIds([]);
       setRoleFilter('all');
@@ -278,15 +278,15 @@ function UsersAdmin() {
     if (!window.confirm(`선택한 ${selectedIds.length}명을 삭제하시겠습니까?`)) return;
     setBulkLoading(true);
     try {
-      await Promise.all(selectedIds.map(id => membersApi.remove(id)));
-      setMembers(members.filter(m => !selectedIds.includes(m.id)));
+      await Promise.all(selectedIds.map(id => usersApi.remove(id)));
+      setUsers(users.filter(u => !selectedIds.includes(u.id)));
       setSelectedIds([]);
     } finally {
       setBulkLoading(false);
     }
   };
 
-  const teamCounts = TEAMS.map(t => ({ ...t, count: membersByTeam(t.id, members).length }));
+  const teamCounts = TEAMS.map(t => ({ ...t, count: usersByTeam(t.id, users).length }));
   const leaves = todaysLeaves(personalEvents, TODAY);
 
   return (
@@ -310,7 +310,7 @@ function UsersAdmin() {
           <div>
             <h3 className="card-title">전체 사용자</h3>
             <div className="card-sub" style={{ marginTop: 2 }}>
-              {filtered.length}명 / 총 {members.length}명
+              {filtered.length}명 / 총 {users.length}명
               {selectedIds.length > 0 && (
                 <> · <span style={{ color: 'var(--brand-strong)', fontWeight: 600 }}>{selectedIds.length}명 선택됨</span></>
               )}
@@ -373,23 +373,23 @@ function UsersAdmin() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(m => {
-              const t = m.teamId ? getTeam(m.teamId) : null;
-              const leave = leaves.find(e => e.userId === m.id);
-              const checked = selectedIds.includes(m.id);
+            {filtered.map(u => {
+              const t = u.teamId ? getTeam(u.teamId) : null;
+              const leave = leaves.find(e => e.userId === u.id);
+              const checked = selectedIds.includes(u.id);
               return (
-                <tr key={m.id} className={checked ? 'is-selected' : ''}>
+                <tr key={u.id} className={checked ? 'is-selected' : ''}>
                   <td style={{ paddingLeft: 18 }}>
-                    <input type="checkbox" className="cb" checked={checked} onChange={() => toggleOne(m.id)} />
+                    <input type="checkbox" className="cb" checked={checked} onChange={() => toggleOne(u.id)} />
                   </td>
-                  <td><Avatar member={m} /></td>
+                  <td><Avatar user={u} /></td>
                   <td>
                     <div className="row" style={{ gap: 6 }}>
-                      <span style={{ fontWeight: 600 }}>{m.name}</span>
-                      {m.isAdmin && <span className="admin-pill">ADMIN</span>}
+                      <span style={{ fontWeight: 600 }}>{u.name}</span>
+                      {u.isAdmin && <span className="admin-pill">ADMIN</span>}
                     </div>
                     <div className="muted" style={{ fontSize: 11, marginTop: 1 }}>
-                      {m.email ?? <span style={{ opacity: 0.45 }}>이메일 없음</span>}
+                      {u.email ?? <span style={{ opacity: 0.45 }}>이메일 없음</span>}
                     </div>
                   </td>
                   <td>
@@ -401,8 +401,8 @@ function UsersAdmin() {
                     ) : <span className="muted">—</span>}
                   </td>
                   <td>
-                    <span className={`role-pill role-${m.role === '팀장' ? 'lead' : m.role === '매니저' ? 'mgr' : 'staff'}`}>
-                      {m.role}
+                    <span className={`role-pill role-${u.role === '팀장' ? 'lead' : u.role === '매니저' ? 'mgr' : 'staff'}`}>
+                      {u.role}
                     </span>
                   </td>
                   <td>
@@ -415,7 +415,7 @@ function UsersAdmin() {
                     )}
                   </td>
                   <td style={{ textAlign: 'right', paddingRight: 18 }}>
-                    <button className="btn btn-ghost btn-icon" onClick={() => setEditing(m)}>
+                    <button className="btn btn-ghost btn-icon" onClick={() => setEditing(u)}>
                       <Icon name="edit" size={14} />
                     </button>
                   </td>
@@ -438,7 +438,7 @@ function UsersAdmin() {
       )}
       {editing && (
         <UserEditModal
-          member={editing}
+          user={editing}
           mode="edit"
           onClose={() => setEditing(null)}
           onSave={handleEdit}

@@ -1,4 +1,4 @@
-import { Team, Member, MealWeek } from '../types';
+import { Team, User, MealWeek } from '../types';
 
 export const TEAMS: Team[] = [
   { id: 'media', name: '미디어팀', color: '#7C8DB5' },
@@ -46,10 +46,10 @@ export function getTeam(id: string): Team {
   return TEAMS.find(t => t.id === id)!;
 }
 
-export function getMember(id: string, members: Member[]): Member | undefined {
-  return members.find(m => m.id === id);
+export function getUser(id: string, users: User[]): User | undefined {
+  return users.find(u => u.id === id);
 }
 
-export function membersByTeam(teamId: string, members: Member[]): Member[] {
-  return members.filter(m => m.teamId === teamId);
+export function usersByTeam(teamId: string, users: User[]): User[] {
+  return users.filter(u => u.teamId === teamId);
 }

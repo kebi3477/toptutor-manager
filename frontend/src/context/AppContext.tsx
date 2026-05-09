@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Member, CompanyEvent, PersonalEvent, AuthUser } from '../types';
+import { User, CompanyEvent, PersonalEvent, AuthUser } from '../types';
 
 export type EditingEvent =
   | { kind: 'company'; event: CompanyEvent }
@@ -13,8 +13,8 @@ interface AppContextType {
   setCreateEventInitialDate: (d: string | null) => void;
   editingEvent: EditingEvent | null;
   setEditingEvent: (v: EditingEvent | null) => void;
-  members: Member[];
-  setMembers: (v: Member[]) => void;
+  users: User[];
+  setUsers: (v: User[]) => void;
   companyEvents: CompanyEvent[];
   setCompanyEvents: (v: CompanyEvent[]) => void;
   personalEvents: PersonalEvent[];
@@ -43,7 +43,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [createEventInitialDate, setCreateEventInitialDate] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<EditingEvent | null>(null);
-  const [members, setMembers] = useState<Member[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [companyEvents, setCompanyEvents] = useState<CompanyEvent[]>([]);
   const [personalEvents, setPersonalEvents] = useState<PersonalEvent[]>([]);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(loadStoredUser);
@@ -62,7 +62,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       showCreateEvent, setShowCreateEvent,
       createEventInitialDate, setCreateEventInitialDate,
       editingEvent, setEditingEvent,
-      members, setMembers,
+      users, setUsers,
       companyEvents, setCompanyEvents,
       personalEvents, setPersonalEvents,
       currentUser, setCurrentUser,

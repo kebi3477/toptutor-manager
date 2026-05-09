@@ -18,7 +18,7 @@ interface CreateEventModalProps {
 
 function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
   const {
-    members, companyEvents, personalEvents,
+    users, companyEvents, personalEvents,
     setPersonalEvents, setCompanyEvents,
     createEventInitialDate,
     editingEvent, setEditingEvent,
@@ -79,7 +79,7 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
 
   if (!open) return null;
 
-  const me = members[0];
+  const me = users[0];
   if (!me) return null;
   const myTeam = me.teamId ? getTeam(me.teamId) : null;
 
@@ -173,7 +173,7 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
         <div className="modal-bd">
           {!isEditMode && (
             <div className={styles.userRow}>
-              <Avatar member={me} />
+              <Avatar user={me} />
               <div>
                 <div className={styles.userName}>{me.name}</div>
                 <div className="muted" style={{ fontSize: 11 }}>{myTeam?.name ?? ''} · 본인 일정 등록</div>

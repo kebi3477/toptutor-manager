@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { TEAMS, getMember, getTeam } from '../../data';
+import { TEAMS, getUser, getTeam } from '../../data';
 import { TODAY, KOR_DAYS, KOR_MONTHS, addDays, isSameDay, eventsOnDate, fmtDate } from '../../utils/date';
 import Icon from '../../components/Icon/Icon';
 import EventChip from '../../components/EventChip/EventChip';
 import Avatar from '../../components/Avatar/Avatar';
 import { useAppContext } from '../../context/AppContext';
 import { eventsApi } from '../../api';
-import { CompanyEvent, PersonalEvent, Member } from '../../types';
+import { CompanyEvent, PersonalEvent, User } from '../../types';
 import styles from './CalendarPage.module.scss';
 
 interface CalendarPageProps {
@@ -23,14 +23,14 @@ type MorePopoverState = { date: Date; chips: ChipItem[]; x: number; y: number };
 
 function ChipDetailPopover({
   popover,
-  members,
+  users,
   onClose,
   isAdmin,
   onEdit,
   onDelete,
 }: {
   popover: ChipPopoverState;
-  members: Member[];
+  users: User[];
   onClose: () => void;
   isAdmin: boolean;
   onEdit: () => void;
@@ -53,7 +53,7 @@ function ChipDetailPopover({
       <div className={styles.popoverOverlay} onClick={onClose} />
       <div className={styles.chipPopover} style={{ left, top }}>
         {item.kind === 'personal' ? (
-          <PersonalDetail event={item.e} members={members} />
+          <PersonalDetail event={item.e} users={users} />
         ) : (
           <CompanyDetail event={item.e} />
         )}
@@ -84,10 +84,10 @@ function ChipDetailPopover({
   );
 }
 
-function PersonalDetail({ event: e, members }: { event: PersonalEvent; members: Member[] }) {
-  const member = getMember(e.userId, members);
-  if (!member) return null;
-  const team = member.teamId ? getTeam(member.teamId) : null;
+function PersonalDetail({ event: e, users }: { event: PersonalEvent; users: User[] }) {
+  const user = getUser(e.userId, users);
+  if (!user) return null;
+  const team = user.teamId ? getTeam(user.teamId) : null;
   const typeLabel =
     e.type === 'half' ? (e.half === 'AM' ? '오전 반차' : '오후 반차')
     : e.type === 'trip' ? e.label
@@ -97,9 +97,9 @@ function PersonalDetail({ event: e, members }: { event: PersonalEvent; members: 
   return (
     <>
       <div className={styles.popoverPerson}>
-        <Avatar member={member} />
+        <Avatar user={user} />
         <div>
-          <div className={styles.popoverName}>{member.name}</div>
+          <div className={styles.popoverName}>{user.name}</div>
           <div className={styles.popoverTeam}>
             <span className={styles.teamDot} style={{ background: team?.color ?? 'var(--text-3)' }} />
             {team?.name ?? '—'}
@@ -186,7 +186,7 @@ function MoreEventsPopover({
 
 function CalendarPage({ isAdmin }: CalendarPageProps) {
   const {
-    members, companyEvents, personalEvents,
+    users, companyEvents, personalEvents,
     setCompanyEvents, setPersonalEvents,
     setShowCreateEvent, setCreateEventInitialDate, setEditingEvent,
   } = useAppContext();
@@ -305,7 +305,7 @@ function CalendarPage({ isAdmin }: CalendarPageProps) {
             const { company, personal } = eventsOnDate(d, companyEvents, personalEvents);
             const filteredPersonal = selectedTeam === 'all'
               ? personal
-              : personal.filter(p => getMember(p.userId, members)?.teamId === selectedTeam);
+              : personal.filter(p => getUser(p.userId, users)?.teamId === selectedTeam);
 
             const chips: ChipItem[] = [];
             if (filter !== 'personal') company.forEach(e => chips.push({ kind: 'company', e }));
@@ -368,7 +368,7 @@ function CalendarPage({ isAdmin }: CalendarPageProps) {
       {chipPopover && (
         <ChipDetailPopover
           popover={chipPopover}
-          members={members}
+          users={users}
           onClose={() => setChipPopover(null)}
           isAdmin={isAdmin}
           onEdit={handleEditChip}

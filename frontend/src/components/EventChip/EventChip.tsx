@@ -1,6 +1,6 @@
 import React from 'react';
 import { CompanyEvent, PersonalEvent } from '../../types';
-import { getMember, getTeam } from '../../data';
+import { getUser, getTeam } from '../../data';
 import { useAppContext } from '../../context/AppContext';
 
 interface CompanyChipProps {
@@ -16,7 +16,7 @@ interface PersonalChipProps {
 type EventChipProps = CompanyChipProps | PersonalChipProps;
 
 function EventChip(props: EventChipProps) {
-  const { members } = useAppContext();
+  const { users } = useAppContext();
 
   if (props.kind === 'company') {
     const { event } = props;
@@ -32,9 +32,9 @@ function EventChip(props: EventChipProps) {
   }
 
   const { event } = props;
-  const member = getMember(event.userId, members);
-  if (!member) return null;
-  const team = member.teamId ? getTeam(member.teamId) : null;
+  const user = getUser(event.userId, users);
+  if (!user) return null;
+  const team = user.teamId ? getTeam(user.teamId) : null;
   const cls = event.type === 'half' ? 'chip-half' : event.type === 'trip' ? 'chip-trip' : 'chip-leave';
   const label = event.type === 'half'
     ? (event.half === 'AM' ? '오전반차' : '오후반차')
@@ -42,9 +42,9 @@ function EventChip(props: EventChipProps) {
     : '연차';
 
   return (
-    <div className={`cal-chip ${cls}`} title={`${member.name} · ${event.label}`}>
+    <div className={`cal-chip ${cls}`} title={`${user.name} · ${event.label}`}>
       <span className="cal-chip-dot" style={{ background: team?.color ?? 'var(--text-3)' }} />
-      <span className="truncate">{member.name} {label}</span>
+      <span className="truncate">{user.name} {label}</span>
     </div>
   );
 }

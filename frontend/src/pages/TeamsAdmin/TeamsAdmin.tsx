@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { getMember, membersByTeam } from '../../data';
+import { getUser, usersByTeam } from '../../data';
 import { TODAY, todaysLeaves } from '../../utils/date';
-import { teamsApi, membersApi } from '../../api';
-import { Team, Member } from '../../types';
+import { teamsApi, usersApi } from '../../api';
+import { Team, User } from '../../types';
 import Avatar from '../../components/Avatar/Avatar';
 import Icon from '../../components/Icon/Icon';
 import { useAppContext } from '../../context/AppContext';
@@ -161,12 +161,12 @@ function EditColorModal({
 // ── 삭제 확인 모달 ────────────────────────────────────────────
 function DeleteConfirmModal({
   team,
-  memberCount,
+  userCount,
   onClose,
   onDelete,
 }: {
   team: Team;
-  memberCount: number;
+  userCount: number;
   onClose: () => void;
   onDelete: () => void;
 }) {
@@ -193,8 +193,8 @@ function DeleteConfirmModal({
         <div className="modal-bd">
           <p style={{ lineHeight: 1.7 }}>
             <strong>{team.name}</strong>을(를) 삭제하시겠습니까?
-            {memberCount > 0 && (
-              <><br /><span style={{ color: 'var(--red)', fontSize: 13 }}>⚠ 현재 {memberCount}명의 팀원이 배정되어 있습니다.</span></>
+            {userCount > 0 && (
+              <><br /><span style={{ color: 'var(--red)', fontSize: 13 }}>⚠ 현재 {userCount}명의 팀원이 배정되어 있습니다.</span></>
             )}
           </p>
         </div>
@@ -265,25 +265,25 @@ function InlineNameEditor({
 }
 
 // ── 팀원 배정 모달 ────────────────────────────────────────────
-function AssignMembersModal({
+function AssignUsersModal({
   team,
-  allMembers,
+  allUsers,
   teams,
   onClose,
   onAssign,
 }: {
   team: Team;
-  allMembers: Member[];
+  allUsers: User[];
   teams: Team[];
   onClose: () => void;
-  onAssign: (updated: Member[]) => void;
+  onAssign: (updated: User[]) => void;
 }) {
-  const unassigned = allMembers.filter(m => m.teamId !== team.id);
+  const unassigned = allUsers.filter(u => u.teamId !== team.id);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const filtered = search ? unassigned.filter(m => m.name.includes(search)) : unassigned;
+  const filtered = search ? unassigned.filter(u => u.name.includes(search)) : unassigned;
 
   const toggle = (id: string) =>
     setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -293,7 +293,7 @@ function AssignMembersModal({
     setLoading(true);
     try {
       const updated = await Promise.all(
-        selected.map(id => membersApi.update(id, { teamId: team.id }))
+        selected.map(id => usersApi.update(id, { teamId: team.id }))
       );
       onAssign(updated);
       onClose();
@@ -316,25 +316,25 @@ function AssignMembersModal({
           </div>
           {filtered.length === 0 ? (
             <p className="empty" style={{ padding: '16px 0' }}>
-              {unassigned.length === 0 ? '모든 멤버가 이미 이 팀에 속해 있습니다.' : '검색 결과가 없습니다.'}
+              {unassigned.length === 0 ? '모든 사용자가 이미 이 팀에 속해 있습니다.' : '검색 결과가 없습니다.'}
             </p>
           ) : (
             <div style={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {filtered.map(m => {
-                const t = teams.find(x => x.id === m.teamId);
-                const checked = selected.includes(m.id);
+              {filtered.map(u => {
+                const t = teams.find(x => x.id === u.teamId);
+                const checked = selected.includes(u.id);
                 return (
                   <label
-                    key={m.id}
+                    key={u.id}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 10,
                       padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
                       background: checked ? 'var(--divider)' : 'transparent',
                     }}
                   >
-                    <input type="checkbox" className="cb" checked={checked} onChange={() => toggle(m.id)} />
-                    <Avatar member={m} />
-                    <span style={{ fontWeight: 600, flex: 1 }}>{m.name}</span>
+                    <input type="checkbox" className="cb" checked={checked} onChange={() => toggle(u.id)} />
+                    <Avatar user={u} />
+                    <span style={{ fontWeight: 600, flex: 1 }}>{u.name}</span>
                     {t && (
                       <span style={{ fontSize: 12, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: t.color, display: 'inline-block' }} />
@@ -359,20 +359,20 @@ function AssignMembersModal({
 }
 
 // ── 팀원 수정 모달 ────────────────────────────────────────────
-function EditMemberModal({
-  member,
+function EditUserModal({
+  user,
   teams,
   onClose,
   onSave,
 }: {
-  member: Member;
+  user: User;
   teams: Team[];
   onClose: () => void;
-  onSave: (id: string, data: { name: string; teamId: string; role: Member['role'] }) => Promise<void>;
+  onSave: (id: string, data: { name: string; teamId: string; role: User['role'] }) => Promise<void>;
 }) {
-  const [name, setName] = useState(member.name);
-  const [teamId, setTeamId] = useState(member.teamId ?? teams[0]?.id ?? '');
-  const [role, setRole] = useState<Member['role']>(member.role);
+  const [name, setName] = useState(user.name);
+  const [teamId, setTeamId] = useState(user.teamId ?? teams[0]?.id ?? '');
+  const [role, setRole] = useState<User['role']>(user.role);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -381,7 +381,7 @@ function EditMemberModal({
     setLoading(true);
     setError('');
     try {
-      await onSave(member.id, { name: name.trim(), teamId, role });
+      await onSave(user.id, { name: name.trim(), teamId, role });
       onClose();
     } catch {
       setError('저장 중 오류가 발생했습니다.');
@@ -393,7 +393,7 @@ function EditMemberModal({
     <div className="modal-bg" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()} style={{ width: 520 }}>
         <div className="modal-hd">
-          <h2>{member.name} 정보 수정</h2>
+          <h2>{user.name} 정보 수정</h2>
           <button className="btn btn-icon btn-ghost" onClick={onClose} disabled={loading} type="button"><Icon name="x" /></button>
         </div>
         <div className="modal-bd">
@@ -455,10 +455,10 @@ function EditMemberModal({
 }
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────
-type Modal = { type: 'add' } | { type: 'editColor'; team: Team } | { type: 'delete'; team: Team } | { type: 'assign' } | { type: 'editMember'; member: Member };
+type Modal = { type: 'add' } | { type: 'editColor'; team: Team } | { type: 'delete'; team: Team } | { type: 'assign' } | { type: 'editUser'; user: User };
 
 function TeamsAdmin() {
-  const { members, personalEvents, setMembers } = useAppContext();
+  const { users, personalEvents, setUsers } = useAppContext();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState('');
@@ -474,8 +474,8 @@ function TeamsAdmin() {
   }, []);
 
   const team = teams.find(t => t.id === selectedId);
-  const allMembers = selectedId ? membersByTeam(selectedId, members) : [];
-  const filtered = search ? allMembers.filter(m => m.name.includes(search)) : allMembers;
+  const teamUsers = selectedId ? usersByTeam(selectedId, users) : [];
+  const filtered = search ? teamUsers.filter(u => u.name.includes(search)) : teamUsers;
   const leaves = todaysLeaves(personalEvents, TODAY);
 
   const handleAdd = useCallback((added: Team) => {
@@ -500,17 +500,17 @@ function TeamsAdmin() {
     });
   }, [selectedId]);
 
-  const handleAssign = useCallback((updated: Member[]) => {
-    setMembers(members.map(m => {
-      const u = updated.find(r => r.id === m.id);
-      return u ?? m;
+  const handleAssign = useCallback((updated: User[]) => {
+    setUsers(users.map(u => {
+      const r = updated.find(x => x.id === u.id);
+      return r ?? u;
     }));
-  }, [members, setMembers]);
+  }, [users, setUsers]);
 
-  const handleMemberSave = useCallback(async (id: string, data: { name: string; teamId: string; role: Member['role'] }) => {
-    const updated = await membersApi.update(id, data);
-    setMembers(members.map(m => m.id === updated.id ? { ...m, ...updated } : m));
-  }, [members, setMembers]);
+  const handleUserSave = useCallback(async (id: string, data: { name: string; teamId: string; role: User['role'] }) => {
+    const updated = await usersApi.update(id, data);
+    setUsers(users.map(u => u.id === updated.id ? { ...u, ...updated } : u));
+  }, [users, setUsers]);
 
   if (loading) {
     return <div className={styles.content}><div className="muted" style={{ padding: 32 }}>팀 목록을 불러오는 중...</div></div>;
@@ -524,7 +524,7 @@ function TeamsAdmin() {
           <div className="card-hd" style={{ padding: '14px 16px 10px' }}>
             <div>
               <h3 className="card-title">팀 목록</h3>
-              <div className="card-sub" style={{ marginTop: 2 }}>{teams.length}개 팀 · {members.length}명</div>
+              <div className="card-sub" style={{ marginTop: 2 }}>{teams.length}개 팀 · {users.length}명</div>
             </div>
             <button className="btn btn-icon" title="팀 추가" onClick={() => setModal({ type: 'add' })}>
               <Icon name="plus" size={14} />
@@ -532,7 +532,7 @@ function TeamsAdmin() {
           </div>
           <div className={styles.list}>
             {teams.map(t => {
-              const count = membersByTeam(t.id, members).length;
+              const count = usersByTeam(t.id, users).length;
               return (
                 <div
                   key={t.id}
@@ -578,7 +578,7 @@ function TeamsAdmin() {
                     )}
                   </div>
                   <div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>
-                    소속 인원 {allMembers.length}명 · 팀장 {allMembers.find(m => m.role === '팀장')?.name || '-'}
+                    소속 인원 {teamUsers.length}명 · 팀장 {teamUsers.find(u => u.role === '팀장')?.name || '-'}
                   </div>
                 </div>
                 <div className="row" style={{ gap: 6 }}>
@@ -593,11 +593,11 @@ function TeamsAdmin() {
 
               <div className={styles.teamStats}>
                 {[
-                  { label: '총원',     value: `${allMembers.length}명` },
-                  { label: '팀장',     value: `${allMembers.filter(m => m.role === '팀장').length}명` },
-                  { label: '매니저',   value: `${allMembers.filter(m => m.role === '매니저').length}명` },
-                  { label: '사원',     value: `${allMembers.filter(m => m.role === '사원').length}명` },
-                  { label: '오늘 부재',value: `${leaves.filter(e => getMember(e.userId, members)?.teamId === team.id).length}명` },
+                  { label: '총원',     value: `${teamUsers.length}명` },
+                  { label: '팀장',     value: `${teamUsers.filter(u => u.role === '팀장').length}명` },
+                  { label: '매니저',   value: `${teamUsers.filter(u => u.role === '매니저').length}명` },
+                  { label: '사원',     value: `${teamUsers.filter(u => u.role === '사원').length}명` },
+                  { label: '오늘 부재',value: `${leaves.filter(e => getUser(e.userId, users)?.teamId === team.id).length}명` },
                 ].map(s => (
                   <div key={s.label} className={styles.teamStat}>
                     <div className={styles.teamStatLabel}>{s.label}</div>
@@ -632,15 +632,15 @@ function TeamsAdmin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(m => {
-                    const leave = leaves.find(e => e.userId === m.id);
+                  {filtered.map(u => {
+                    const leave = leaves.find(e => e.userId === u.id);
                     return (
-                      <tr key={m.id}>
-                        <td><Avatar member={m} /></td>
-                        <td><span style={{ fontWeight: 600 }}>{m.name}</span></td>
+                      <tr key={u.id}>
+                        <td><Avatar user={u} /></td>
+                        <td><span style={{ fontWeight: 600 }}>{u.name}</span></td>
                         <td>
-                          <span className={`role-pill role-${m.role === '팀장' ? 'lead' : m.role === '매니저' ? 'mgr' : 'staff'}`}>
-                            {m.role}
+                          <span className={`role-pill role-${u.role === '팀장' ? 'lead' : u.role === '매니저' ? 'mgr' : 'staff'}`}>
+                            {u.role}
                           </span>
                         </td>
                         <td>
@@ -653,14 +653,14 @@ function TeamsAdmin() {
                           )}
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <button className="btn btn-ghost btn-icon" onClick={() => setModal({ type: 'editMember', member: m })} type="button"><Icon name="edit" size={14} /></button>
+                          <button className="btn btn-ghost btn-icon" onClick={() => setModal({ type: 'editUser', user: u })} type="button"><Icon name="edit" size={14} /></button>
                         </td>
                       </tr>
                     );
                   })}
                   {filtered.length === 0 && (
                     <tr><td colSpan={6} className="empty" style={{ padding: 30 }}>
-                      {allMembers.length === 0 ? '배정된 팀원이 없습니다.' : '검색 결과가 없습니다.'}
+                      {teamUsers.length === 0 ? '배정된 팀원이 없습니다.' : '검색 결과가 없습니다.'}
                     </td></tr>
                   )}
                 </tbody>
@@ -685,26 +685,26 @@ function TeamsAdmin() {
       {modal?.type === 'delete' && (
         <DeleteConfirmModal
           team={modal.team}
-          memberCount={membersByTeam(modal.team.id, members).length}
+          userCount={usersByTeam(modal.team.id, users).length}
           onClose={() => setModal(null)}
           onDelete={() => handleDelete(modal.team.id)}
         />
       )}
       {modal?.type === 'assign' && team && (
-        <AssignMembersModal
+        <AssignUsersModal
           team={team}
-          allMembers={members}
+          allUsers={users}
           teams={teams}
           onClose={() => setModal(null)}
           onAssign={handleAssign}
         />
       )}
-      {modal?.type === 'editMember' && (
-        <EditMemberModal
-          member={modal.member}
+      {modal?.type === 'editUser' && (
+        <EditUserModal
+          user={modal.user}
           teams={teams}
           onClose={() => setModal(null)}
-          onSave={handleMemberSave}
+          onSave={handleUserSave}
         />
       )}
     </div>
