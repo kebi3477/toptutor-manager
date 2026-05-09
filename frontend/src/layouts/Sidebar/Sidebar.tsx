@@ -25,16 +25,18 @@ const ADMIN_ITEMS: NavItem[] = [
 
 interface SidebarProps {
   isAdmin: boolean;
+  open?: boolean;
+  onClose?: () => void;
 }
 
-function Sidebar({ isAdmin }: SidebarProps) {
+function Sidebar({ isAdmin, open, onClose }: SidebarProps) {
   const { currentUser, personalEvents, logout } = useAppContext();
   const me = currentUser;
   const myTeam = me?.teamId ? getTeam(me.teamId) : null;
   const leaveCount = todaysLeaves(personalEvents, TODAY).length;
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${open ? styles.open : ''}`}>
       <div className={styles.brand}>
         <div className={styles.logo}>M</div>
         <div>
@@ -50,6 +52,7 @@ function Sidebar({ isAdmin }: SidebarProps) {
           key={item.path}
           to={item.path}
           className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ''}`}
+          onClick={onClose}
         >
           <span className={styles.itemIcon}><Icon name={item.icon} size={17} /></span>
           {item.label}
@@ -70,6 +73,7 @@ function Sidebar({ isAdmin }: SidebarProps) {
               key={item.path}
               to={item.path}
               className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ''}`}
+              onClick={onClose}
             >
               <span className={styles.itemIcon}><Icon name={item.icon} size={17} /></span>
               {item.label}
@@ -83,6 +87,7 @@ function Sidebar({ isAdmin }: SidebarProps) {
       <NavLink
         to="/settings"
         className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ''}`}
+        onClick={onClose}
       >
         <span className={styles.itemIcon}><Icon name="settings" size={17} /></span>
         설정

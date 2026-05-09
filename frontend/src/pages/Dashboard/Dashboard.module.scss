@@ -362,3 +362,55 @@
   padding: 24px 6px;
   line-height: 1.5;
 }
+
+/* ── Mobile ─────────────────────────────── */
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px 16px 48px;
+  }
+
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .heroStats {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .statSep {
+    display: none;
+  }
+
+  .stat {
+    text-align: left;
+    min-width: auto;
+  }
+
+  .col4,
+  .col5,
+  .col7,
+  .col8 {
+    grid-column: span 12;
+  }
+
+  .mealWeek {
+    overflow-x: auto;
+    grid-template-columns: repeat(5, minmax(88px, 1fr));
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 12px 12px 40px;
+  }
+
+  .heroDate {
+    font-size: 18px;
+  }
+}

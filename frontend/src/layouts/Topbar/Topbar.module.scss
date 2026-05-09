@@ -33,3 +33,23 @@
   align-items: center;
   gap: 8px;
 }
+
+.menuBtn {
+  display: none;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 16px;
+  }
+
+  .menuBtn {
+    display: grid;
+    place-items: center;
+  }
+
+  .sub {
+    display: none;
+  }
+}

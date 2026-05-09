@@ -45,6 +45,7 @@ function PublicRoute({ isLoggedIn }: { isLoggedIn: boolean }) {
 
 function AppShell() {
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isAdmin, showCreateEvent, setShowCreateEvent, setCreateEventInitialDate, setUsers, setCompanyEvents, setPersonalEvents } = useAppContext();
 
   useEffect(() => {
@@ -52,6 +53,10 @@ function AppShell() {
     eventsApi.getAllCompany().then(setCompanyEvents).catch(() => {});
     eventsApi.getAllPersonal().then(setPersonalEvents).catch(() => {});
   }, [setUsers, setCompanyEvents, setPersonalEvents]);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
 
   const meta = PAGE_META[location.pathname] ?? { title: '' };
   const isCalendarish = location.pathname === '/dashboard' || location.pathname === '/calendar';
@@ -64,9 +69,10 @@ function AppShell() {
 
   return (
     <div className={styles.app}>
-      <Sidebar isAdmin={isAdmin} />
+      <Sidebar isAdmin={isAdmin} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {sidebarOpen && <div className={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
       <div className={styles.main}>
-        <Topbar title={meta.title} sub={meta.sub} actions={topbarActions} />
+        <Topbar title={meta.title} sub={meta.sub} actions={topbarActions} onMenuClick={() => setSidebarOpen(true)} />
         <div className={styles.pageWrapper}>
           <Outlet context={{ isAdmin, showCreateEvent, setShowCreateEvent }} />
         </div>

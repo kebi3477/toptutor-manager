@@ -6,11 +6,17 @@ interface TopbarProps {
   title: string;
   sub?: string;
   actions?: React.ReactNode;
+  onMenuClick?: () => void;
 }
 
-function Topbar({ title, sub, actions }: TopbarProps) {
+function Topbar({ title, sub, actions, onMenuClick }: TopbarProps) {
   return (
     <div className={styles.topbar}>
+      {onMenuClick && (
+        <button className={`btn btn-icon btn-ghost ${styles.menuBtn}`} onClick={onMenuClick} aria-label="메뉴">
+          <Icon name="menu" size={18} />
+        </button>
+      )}
       <div>
         <h1 className={styles.title}>{title}</h1>
         {sub && <div className={styles.sub}>{sub}</div>}

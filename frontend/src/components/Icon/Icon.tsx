@@ -4,7 +4,7 @@ type IconName =
   | 'home' | 'calendar' | 'meal' | 'users' | 'plus' | 'chevron-left'
   | 'chevron-right' | 'chevron-down' | 'x' | 'search' | 'bell' | 'settings'
   | 'clock' | 'pin' | 'megaphone' | 'sparkle' | 'check' | 'edit'
-  | 'folder' | 'trash' | 'palette' | 'logout';
+  | 'folder' | 'trash' | 'palette' | 'logout' | 'menu';
 
 interface IconProps {
   name: IconName;
@@ -68,6 +68,8 @@ function Icon({ name, size = 16 }: IconProps) {
       return <svg {...props}><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-1-1-2 1-2 2-2h2a4 4 0 0 0 0-8 9 9 0 0 0-5-4z" /><circle cx="7.5" cy="11" r="1" /><circle cx="9.5" cy="7" r="1" /><circle cx="14" cy="7" r="1" /><circle cx="16.5" cy="11" r="1" /></svg>;
     case 'logout':
       return <svg {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>;
+    case 'menu':
+      return <svg {...props}><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>;
     default:
       return null;
   }

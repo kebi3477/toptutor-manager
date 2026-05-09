@@ -4,6 +4,24 @@
   min-height: 100vh;
 }
 
+.sidebarOverlay {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebarOverlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 150;
+  }
+}
+
 .main {
   min-width: 0;
   display: flex;
