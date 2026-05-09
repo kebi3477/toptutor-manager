@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Avatar from '../Avatar/Avatar';
 import Icon from '../Icon/Icon';
-import { getTeam } from '../../data';
+import { getTeam, TEAMS } from '../../data';
 import { TODAY, fmtDate } from '../../utils/date';
 import { useAppContext } from '../../context/AppContext';
 import { eventsApi } from '../../api';
@@ -9,6 +9,7 @@ import { PersonalEvent } from '../../types';
 import styles from './CreateEventModal.module.scss';
 
 type EventType = 'leave' | 'half' | 'personal-event' | 'company';
+type CompanyType = 'event' | 'meeting' | 'holiday';
 
 interface CreateEventModalProps {
   open: boolean;
@@ -26,11 +27,14 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
   } = useAppContext();
 
   const [type, setType] = useState<EventType>('leave');
+  const [companyType, setCompanyType] = useState<CompanyType>('event');
   const [startDate, setStartDate] = useState(fmtDate(TODAY));
   const [endDate, setEndDate] = useState(fmtDate(TODAY));
   const [half, setHalf] = useState<'AM' | 'PM'>('AM');
   const [title, setTitle] = useState('');
-  const [memo, setMemo] = useState('');
+  const [time, setTime] = useState('');
+  const [location, setLocation] = useState('');
+  const [targetUserId, setTargetUserId] = useState('');
   const [loading, setLoading] = useState(false);
 
   const isEditMode = editingEvent !== null;
@@ -43,19 +47,26 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
   useEffect(() => {
     if (!open) return;
     setLoading(false);
-    setMemo('');
     if (editingEvent) {
       if (editingEvent.kind === 'company') {
         const ce = editingEvent.event;
         setType('company');
+        setCompanyType(ce.type as CompanyType);
         setTitle(ce.title);
         setStartDate(ce.startDate || ce.date || fmtDate(TODAY));
         setEndDate(ce.endDate || ce.startDate || ce.date || fmtDate(TODAY));
+        setTime(ce.time || '');
+        setLocation(ce.location || '');
         setHalf('AM');
+        setTargetUserId('');
       } else {
         const pe = editingEvent.event as PersonalEvent;
         setStartDate(pe.startDate);
         setEndDate(pe.endDate);
+        setCompanyType('event');
+        setTime('');
+        setLocation('');
+        setTargetUserId('');
         if (pe.type === 'half') {
           setType('half');
           setHalf((pe.half as 'AM' | 'PM') || 'AM');
@@ -73,8 +84,12 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
       setStartDate(d);
       setEndDate(d);
       setType('leave');
+      setCompanyType('event');
       setTitle('');
       setHalf('AM');
+      setTime('');
+      setLocation('');
+      setTargetUserId(currentUser?.id ?? '');
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -82,7 +97,12 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
 
   const me = users.find(u => u.id === currentUser?.id) ?? null;
   if (!me) return null;
-  const myTeam = me.teamId ? getTeam(me.teamId) : null;
+
+  // 어드민이 개인 일정 등록 시 대상 사용자 (본인 또는 선택)
+  const targetUser = isAdmin && type !== 'company'
+    ? (users.find(u => u.id === targetUserId) ?? me)
+    : me;
+  const targetTeam = targetUser.teamId ? getTeam(targetUser.teamId) : null;
 
   const typeOptions = [
     { id: 'leave' as EventType, label: '연차', desc: '종일 휴가' },
@@ -93,14 +113,23 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
       : []),
   ];
 
+  const companyTypeOptions: { id: CompanyType; label: string }[] = [
+    { id: 'event', label: '이벤트' },
+    { id: 'meeting', label: '회의' },
+    { id: 'holiday', label: '공휴일' },
+  ];
+
   const handleSubmit = async () => {
-    if (!me) return;
     setLoading(true);
     try {
       if (isEditMode && editingEvent) {
         const id = editingEvent.event.id;
         if (editingEvent.kind === 'company') {
-          const updated = await eventsApi.updateCompany(id, { title, startDate, endDate, type: 'event' });
+          const updated = await eventsApi.updateCompany(id, {
+            title, startDate, endDate, type: companyType,
+            ...(companyType !== 'holiday' && time.trim() ? { time: time.trim() } : {}),
+            ...(companyType !== 'holiday' && location.trim() ? { location: location.trim() } : {}),
+          });
           setCompanyEvents(companyEvents.map(e => e.id === updated.id ? updated : e));
         } else {
           const label = type === 'half'
@@ -118,12 +147,16 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
         }
       } else {
         if (type === 'company') {
-          const created = await eventsApi.createCompany({ title, startDate, endDate, type: 'event' });
+          const created = await eventsApi.createCompany({
+            title, startDate, endDate, type: companyType,
+            ...(companyType !== 'holiday' && time.trim() ? { time: time.trim() } : {}),
+            ...(companyType !== 'holiday' && location.trim() ? { location: location.trim() } : {}),
+          });
           setCompanyEvents([...companyEvents, created]);
         } else if (type === 'leave' || type === 'half') {
           const label = type === 'half' ? (half === 'AM' ? '오전 반차' : '오후 반차') : '연차';
           const created = await eventsApi.createPersonal({
-            userId: me.id, type, startDate,
+            userId: targetUser.id, type, startDate,
             endDate: type === 'half' ? startDate : endDate,
             label,
             ...(type === 'half' ? { half } : {}),
@@ -131,7 +164,7 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
           setPersonalEvents([...personalEvents, created]);
         } else if (type === 'personal-event') {
           const created = await eventsApi.createPersonal({
-            userId: me.id, type: 'trip', startDate, endDate,
+            userId: targetUser.id, type: 'trip', startDate, endDate,
             label: title.trim() || '외근/출장',
           });
           setPersonalEvents([...personalEvents, created]);
@@ -161,6 +194,13 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
     }
   };
 
+  // 타입 변경 시 company 전환이면 targetUserId 초기화
+  const handleTypeChange = (t: EventType) => {
+    setType(t);
+    if (t === 'company') setTargetUserId('');
+    else if (!targetUserId) setTargetUserId(me.id);
+  };
+
   return (
     <div className="modal-bg" onClick={handleClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -172,16 +212,51 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
         </div>
 
         <div className="modal-bd">
-          {!isEditMode && (
-            <div className={styles.userRow}>
-              <Avatar user={me} />
-              <div>
-                <div className={styles.userName}>{me.name}</div>
-                <div className="muted" style={{ fontSize: 11 }}>{myTeam?.name ?? ''} · 본인 일정 등록</div>
+          {/* 대상 사용자 */}
+          {!isEditMode && type !== 'company' && (
+            isAdmin ? (
+              <div className="field">
+                <label className="field-label">대상 직원</label>
+                <div className={styles.userSelectRow}>
+                  {targetUser && <Avatar user={targetUser} />}
+                  <select
+                    className="select"
+                    style={{ flex: 1, height: 36 }}
+                    value={targetUserId || me.id}
+                    onChange={e => setTargetUserId(e.target.value)}
+                    disabled={loading}
+                  >
+                    <option value={me.id}>{me.name} (본인)</option>
+                    {users
+                      .filter(u => u.id !== me.id)
+                      .sort((a, b) => {
+                        const ta = TEAMS.findIndex(t => t.id === a.teamId);
+                        const tb = TEAMS.findIndex(t => t.id === b.teamId);
+                        return ta !== tb ? ta - tb : a.name.localeCompare(b.name, 'ko');
+                      })
+                      .map(u => {
+                        const t = u.teamId ? getTeam(u.teamId) : null;
+                        return (
+                          <option key={u.id} value={u.id}>
+                            {u.name}{t ? ` · ${t.name}` : ''}
+                          </option>
+                        );
+                      })}
+                  </select>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className={styles.userRow}>
+                <Avatar user={me} />
+                <div>
+                  <div className={styles.userName}>{me.name}</div>
+                  <div className="muted" style={{ fontSize: 11 }}>{targetTeam?.name ?? ''} · 본인 일정 등록</div>
+                </div>
+              </div>
+            )
           )}
 
+          {/* 일정 유형 */}
           <div className="field">
             <label className="field-label">일정 유형</label>
             <div className={styles.typeGrid}>
@@ -189,7 +264,7 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
                 <button
                   key={t.id}
                   className={`${styles.typeCard} ${type === t.id ? styles.typeCardActive : ''}`}
-                  onClick={() => setType(t.id)}
+                  onClick={() => handleTypeChange(t.id)}
                   disabled={loading}
                   type="button"
                 >
@@ -200,6 +275,28 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
             </div>
           </div>
 
+          {/* 회사 일정 타입 */}
+          {type === 'company' && (
+            <div className="field">
+              <label className="field-label">회사 일정 분류</label>
+              <div className="seg" style={{ width: '100%' }}>
+                {companyTypeOptions.map(o => (
+                  <button
+                    key={o.id}
+                    className={`seg-btn ${companyType === o.id ? 'active' : ''}`}
+                    onClick={() => setCompanyType(o.id)}
+                    style={{ flex: 1 }}
+                    disabled={loading}
+                    type="button"
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 반차 시간 */}
           {type === 'half' && (
             <div className="field">
               <label className="field-label">반차 시간</label>
@@ -210,12 +307,13 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
             </div>
           )}
 
+          {/* 제목 */}
           {(type === 'company' || type === 'personal-event') && (
             <div className="field">
               <label className="field-label">제목</label>
               <input
                 className="input"
-                placeholder="일정 제목"
+                placeholder={type === 'company' ? '일정 제목' : '외근/출장 내용'}
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 disabled={loading}
@@ -223,6 +321,7 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
             </div>
           )}
 
+          {/* 날짜 */}
           <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
             <div className="field" style={{ flex: 1 }}>
               <label className="field-label">시작일</label>
@@ -248,18 +347,35 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
             )}
           </div>
 
-          <div className="field">
-            <label className="field-label">
-              메모 <span className="muted" style={{ fontWeight: 400 }}>(선택)</span>
-            </label>
-            <textarea
-              className="textarea"
-              placeholder="팀에 공유할 내용이 있다면 적어주세요"
-              value={memo}
-              onChange={e => setMemo(e.target.value)}
-              disabled={loading}
-            />
-          </div>
+          {/* 회사 일정 — 시간/장소 (공휴일 제외) */}
+          {type === 'company' && companyType !== 'holiday' && (
+            <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+              <div className="field" style={{ flex: 1 }}>
+                <label className="field-label">
+                  시간 <span className="muted" style={{ fontWeight: 400 }}>(선택)</span>
+                </label>
+                <input
+                  className="input tnum"
+                  placeholder="예: 14:00"
+                  value={time}
+                  onChange={e => setTime(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div className="field" style={{ flex: 1 }}>
+                <label className="field-label">
+                  장소 <span className="muted" style={{ fontWeight: 400 }}>(선택)</span>
+                </label>
+                <input
+                  className="input"
+                  placeholder="예: 4층 회의실"
+                  value={location}
+                  onChange={e => setLocation(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="modal-ft" style={{ justifyContent: 'space-between' }}>
