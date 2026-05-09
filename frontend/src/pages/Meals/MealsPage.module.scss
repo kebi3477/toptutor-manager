@@ -148,3 +148,52 @@
   align-items: center;
   gap: 6px;
 }
+
+/* ── Mobile ─────────────────────────────── */
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px 16px 48px;
+  }
+
+  .weekTitle {
+    font-size: 18px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .card {
+    min-height: 260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 12px 12px 40px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .card {
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .cardDay {
+    font-size: 12px;
+  }
+
+  .cardDate {
+    font-size: 15px;
+  }
+
+  .mealList {
+    font-size: 11.5px;
+  }
+}

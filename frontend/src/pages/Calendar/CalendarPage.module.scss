@@ -294,3 +294,101 @@
   border-radius: 4px;
   &:hover { opacity: 0.82; }
 }
+
+/* ── Mobile ─────────────────────────────── */
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px 0 48px;
+  }
+
+  .toolbar {
+    padding: 0 16px;
+    margin-bottom: 10px;
+  }
+
+  .monthTitle {
+    font-size: 18px;
+  }
+
+  .legend {
+    padding: 0 16px;
+    gap: 10px;
+    font-size: 10.5px;
+  }
+
+  .headCell {
+    padding: 7px 2px;
+    font-size: 10px;
+  }
+
+  .body {
+    grid-auto-rows: minmax(72px, 1fr);
+  }
+
+  .cell {
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .cellNum {
+    font-size: 11px;
+    padding: 1px 2px;
+  }
+
+  .todayPill {
+    width: 19px;
+    height: 19px;
+    font-size: 10.5px;
+  }
+
+  /* 칩 텍스트 줄이기 */
+  .cell :global(.chip) {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .more {
+    font-size: 9.5px;
+    padding: 0 2px;
+  }
+
+  /* 팝오버 너비를 뷰포트에 맞게 */
+  .chipPopover,
+  .morePopover {
+    max-width: calc(100vw - 24px);
+  }
+}
+
+@media (max-width: 480px) {
+  .legend {
+    display: none;
+  }
+
+  .body {
+    grid-auto-rows: minmax(56px, 1fr);
+  }
+
+  .cellHeader {
+    min-height: 20px;
+  }
+
+  /* 칩 → 색상 바만 표시 (텍스트 숨김) */
+  .cell :global(.chip) {
+    font-size: 0 !important;
+    padding: 0 !important;
+    height: 5px !important;
+    min-height: unset !important;
+    border-radius: 2px !important;
+    line-height: 1;
+  }
+
+  .more {
+    font-size: 8.5px;
+  }
+
+  .addBtn {
+    width: 16px;
+    height: 16px;
+  }
+}
