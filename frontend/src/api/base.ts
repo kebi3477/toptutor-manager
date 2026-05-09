@@ -1,11 +1,36 @@
 export const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
+export function getToken(): string | null {
+  return localStorage.getItem('token');
+}
+
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const token = getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+
+  if (res.status === 401) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth');
+    window.location.href = '/';
+    throw new Error('Unauthorized');
+  }
+
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      message = body.message ?? message;
+    } catch {}
+    throw new Error(message);
+  }
+
   if (res.status === 204 || res.headers.get('content-length') === '0') {
     return undefined as T;
   }

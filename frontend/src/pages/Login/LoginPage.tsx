@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import Icon from '../../components/Icon/Icon';
+import { authApi } from '../../api';
+import type { AuthUser } from '../../types';
 import styles from './LoginPage.module.scss';
 
 interface LoginPageProps {
-  onLogin: () => void;
+  onLogin: (token: string, user: AuthUser) => void;
   onGoSignup: () => void;
 }
 
@@ -22,14 +24,15 @@ function LoginPage({ onLogin, onGoSignup }: LoginPageProps) {
     if (!password) { setError('비밀번호를 입력해주세요.'); return; }
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    setLoading(false);
-
-    // mock: any valid-looking email + pw length >= 6 succeeds
-    if (!email.includes('@')) { setError('올바른 이메일 형식이 아닙니다.'); return; }
-    if (password.length < 6) { setError('비밀번호가 올바르지 않습니다.'); return; }
-
-    onLogin();
+    try {
+      const res = await authApi.login(email.trim(), password);
+      onLogin(res.accessToken, res.user);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '로그인에 실패했습니다.';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

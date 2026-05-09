@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
-import { TEAMS } from '../../data';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../components/Icon/Icon';
+import { authApi, teamsApi } from '../../api';
+import type { AuthUser, Team } from '../../types';
 import styles from './SignupPage.module.scss';
 
 interface SignupPageProps {
-  onSignup: () => void;
+  onSignup: (token: string, user: AuthUser) => void;
   onGoLogin: () => void;
 }
 
 type Step = 1 | 2 | 3;
 
-const MOCK_CODE = '123456'; // 실제 구현 시 API 연동
-
 function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
   const [step, setStep] = useState<Step>(1);
+  const [teams, setTeams] = useState<Team[]>([]);
 
   // Step 1
   const [email, setEmail] = useState('');
@@ -33,6 +33,10 @@ function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    teamsApi.getAll().then(setTeams).catch(() => {});
+  }, []);
+
   // ── Step 1 ──────────────────────────────────
   const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,11 +48,15 @@ function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
     if (password !== confirmPw) { setError('비밀번호가 일치하지 않습니다.'); return; }
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 900));
-    setLoading(false);
-
-    startResendCooldown();
-    setStep(2);
+    try {
+      await authApi.signup(email.trim(), password);
+      startResendCooldown();
+      setStep(2);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '메일 발송에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── Step 2 ──────────────────────────────────
@@ -65,10 +73,15 @@ function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
   const handleResend = async () => {
     if (resendCooldown > 0) return;
     setLoading(true);
-    await new Promise(r => setTimeout(r, 700));
-    setLoading(false);
-    setCodeError('');
-    startResendCooldown();
+    try {
+      await authApi.signup(email.trim(), password);
+      setCodeError('');
+      startResendCooldown();
+    } catch (err: unknown) {
+      setCodeError(err instanceof Error ? err.message : '재발송에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStep2 = async (e: React.FormEvent) => {
@@ -78,15 +91,14 @@ function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
     if (code.length !== 6) { setCodeError('6자리 코드를 입력해주세요.'); return; }
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 700));
-    setLoading(false);
-
-    if (code !== MOCK_CODE) {
-      setCodeError('인증 코드가 올바르지 않습니다. 다시 확인해주세요.');
-      return;
+    try {
+      await authApi.verifyEmail(email.trim(), code);
+      setStep(3);
+    } catch (err: unknown) {
+      setCodeError(err instanceof Error ? err.message : '인증에 실패했습니다.');
+    } finally {
+      setLoading(false);
     }
-
-    setStep(3);
   };
 
   // ── Step 3 ──────────────────────────────────
@@ -98,10 +110,14 @@ function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
     if (!teamId) { setError('소속 팀을 선택해주세요.'); return; }
 
     setLoading(true);
-    await new Promise(r => setTimeout(r, 900));
-    setLoading(false);
-
-    onSignup();
+    try {
+      const res = await authApi.completeSignup(email.trim(), name.trim(), teamId);
+      onSignup(res.accessToken, res.user);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -186,7 +202,7 @@ function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
 
               <button type="submit" className={`btn btn-primary ${styles.submitBtn}`} disabled={loading}>
                 {loading ? <span className={styles.spinner} /> : null}
-                {loading ? '처리 중...' : '인증 메일 발송'}
+                {loading ? '발송 중...' : '인증 메일 발송'}
               </button>
             </form>
           </>
@@ -230,10 +246,6 @@ function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
                 </button>
               </div>
 
-              <div className={styles.mockNote}>
-                <Icon name="sparkle" size={12} /> 테스트 코드: <strong>123456</strong>
-              </div>
-
               <button type="submit" className={`btn btn-primary ${styles.submitBtn}`} disabled={loading || code.length !== 6}>
                 {loading ? <span className={styles.spinner} /> : null}
                 {loading ? '확인 중...' : '인증 확인'}
@@ -269,7 +281,7 @@ function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
               <div className="field">
                 <label className="field-label">소속 팀</label>
                 <div className={styles.teamGrid}>
-                  {TEAMS.map(t => (
+                  {teams.map(t => (
                     <button
                       key={t.id}
                       type="button"

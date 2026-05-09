@@ -148,3 +148,22 @@
   color: var(--text-3);
   margin-top: 2px;
 }
+
+.logoutBtn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+
+  &:hover {
+    background: rgba(217, 80, 78, 0.1);
+    color: var(--red);
+  }
+}

@@ -28,9 +28,9 @@ interface SidebarProps {
 }
 
 function Sidebar({ isAdmin }: SidebarProps) {
-  const { members, personalEvents } = useAppContext();
-  const me = members[0];
-  const myTeam = me ? getTeam(me.teamId) : null;
+  const { currentUser, personalEvents, logout } = useAppContext();
+  const me = currentUser;
+  const myTeam = me?.teamId ? getTeam(me.teamId) : null;
   const leaveCount = todaysLeaves(personalEvents, TODAY).length;
 
   return (
@@ -80,9 +80,9 @@ function Sidebar({ isAdmin }: SidebarProps) {
 
       <div className={styles.spacer} />
 
-      {me && myTeam && (
+      {me && (
         <div className={styles.user}>
-          <div className={styles.userAvatar} style={{ background: myTeam.color }}>
+          <div className={styles.userAvatar} style={{ background: myTeam?.color ?? 'var(--text-3)' }}>
             {me.name.slice(-2)}
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
@@ -90,8 +90,13 @@ function Sidebar({ isAdmin }: SidebarProps) {
               {me.name}
               {isAdmin && <span className={styles.adminMark}>&nbsp;·관리자</span>}
             </div>
-            <div className={styles.userRole}>{myTeam.name} · {me.role}</div>
+            <div className={styles.userRole}>
+              {myTeam ? `${myTeam.name} · ` : ''}{me.role}
+            </div>
           </div>
+          <button className={styles.logoutBtn} onClick={logout} title="로그아웃">
+            <Icon name="logout" size={14} />
+          </button>
         </div>
       )}
     </aside>

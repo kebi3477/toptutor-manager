@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { Member, CompanyEvent, PersonalEvent } from '../types';
+import { Member, CompanyEvent, PersonalEvent, AuthUser } from '../types';
 
 export type EditingEvent =
   | { kind: 'company'; event: CompanyEvent }
@@ -20,12 +20,24 @@ interface AppContextType {
   setCompanyEvents: (v: CompanyEvent[]) => void;
   personalEvents: PersonalEvent[];
   setPersonalEvents: (v: PersonalEvent[]) => void;
+  currentUser: AuthUser | null;
+  setCurrentUser: (v: AuthUser | null) => void;
+  logout: () => void;
 }
 
 const AppContext = createContext<AppContextType>(null!);
 
 export function useAppContext() {
   return useContext(AppContext);
+}
+
+function loadStoredUser(): AuthUser | null {
+  try {
+    const raw = localStorage.getItem('auth_user');
+    return raw ? (JSON.parse(raw) as AuthUser) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -36,6 +48,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [companyEvents, setCompanyEvents] = useState<CompanyEvent[]>([]);
   const [personalEvents, setPersonalEvents] = useState<PersonalEvent[]>([]);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(loadStoredUser);
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('auth_user');
+    window.location.replace('/');
+  };
 
   return (
     <AppContext.Provider value={{
@@ -46,6 +65,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       members, setMembers,
       companyEvents, setCompanyEvents,
       personalEvents, setPersonalEvents,
+      currentUser, setCurrentUser, logout,
     }}>
       {children}
     </AppContext.Provider>

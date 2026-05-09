@@ -18,16 +18,16 @@
 
 ---
 
-## 인증 (`/` 로그인, `/signup` 회원가입)
+## 인증 (`/` 로그인, `/signup` 회원가입) ✅ 완료
 
 | 항목 | 설명 |
 |------|------|
-| **로그인 API 연동** | `handleSubmit`이 mock (setTimeout + 이메일 형식 검증만 수행). 실제 인증 백엔드(JWT 또는 세션) 구현 및 연동 필요 |
-| **회원가입 API 연동** | Step 1·2·3 전체가 mock. 이메일 인증 메일 발송, 코드 검증, 사용자 생성 API 연동 필요 |
-| **이메일 인증 코드 발송** | `MOCK_CODE = '123456'` 하드코딩 사용 중. 실제 이메일 서비스(SendGrid, SES 등) 연동 필요 |
-| **로그아웃** | `localStorage.removeItem('auth')` 만으로 처리 중. 서버 세션/토큰 무효화 처리 필요 |
-| **인증 상태 지속** | 현재 `localStorage('auth') === 'true'` 문자열 비교. JWT 토큰 저장·갱신·만료 처리 필요 |
-| **로그인 사용자 연동** | 로그인한 사용자와 members 테이블의 레코드를 매핑하는 로직 없음 (Sidebar에 members[0] 하드코딩) |
+| ~~**로그인 API 연동**~~ | ✅ `POST /api/auth/login` — bcrypt 검증 후 JWT 발급 |
+| ~~**회원가입 API 연동**~~ | ✅ Step 1 `signup` → Step 2 `verify-email` → Step 3 `complete-signup` 전체 API 연동 |
+| ~~**이메일 인증 코드 발송**~~ | ✅ nodemailer SMTP. SMTP 미설정 시 서버 콘솔에 코드 출력 (`.env`에서 설정) |
+| ~~**로그아웃**~~ | ✅ localStorage에서 token + user 제거, AppContext 초기화 |
+| ~~**인증 상태 지속**~~ | ✅ JWT를 `localStorage('token')`에 저장. API 요청 시 `Authorization: Bearer` 헤더 자동 부착. 401 시 자동 로그아웃 |
+| ~~**로그인 사용자 연동**~~ | ✅ `AppContext.currentUser`로 로그인 유저 전역 관리. Sidebar에서 `currentUser` 표시 |
 
 ---
 

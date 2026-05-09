@@ -14,6 +14,7 @@ import Icon from './components/Icon/Icon';
 import CreateEventModal from './components/CreateEventModal/CreateEventModal';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { membersApi, eventsApi } from './api';
+import type { AuthUser } from './types';
 import styles from './App.module.scss';
 
 // ── Page metadata keyed by pathname ─────────────────────────────────────────
@@ -148,17 +149,22 @@ function MealsEditRoutePage() {
 // ── Root ─────────────────────────────────────────────────────────────────────
 
 function AppRoutes() {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('auth') === 'true');
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('token'));
   const navigate = useNavigate();
+  const { setCurrentUser } = useAppContext();
 
-  const handleLogin = () => {
-    localStorage.setItem('auth', 'true');
+  const handleLogin = (token: string, user: AuthUser) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('auth_user', JSON.stringify(user));
+    setCurrentUser(user);
     setIsLoggedIn(true);
     navigate('/dashboard', { replace: true });
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('auth');
+    localStorage.removeItem('token');
+    localStorage.removeItem('auth_user');
+    setCurrentUser(null);
     setIsLoggedIn(false);
     navigate('/', { replace: true });
   };

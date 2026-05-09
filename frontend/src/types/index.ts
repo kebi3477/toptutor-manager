@@ -77,3 +77,17 @@ export interface MealDay {
 export type MealWeek = MealDay[];
 
 export type PageId = 'dashboard' | 'calendar' | 'meals' | 'teams' | 'users' | 'meals-edit';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  teamId: string | null;
+  role: string;
+  isAdmin: boolean;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  user: AuthUser;
+}
