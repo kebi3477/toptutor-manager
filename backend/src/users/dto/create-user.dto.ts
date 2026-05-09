@@ -1,10 +1,14 @@
 import { IsIn, IsOptional, IsString, Length } from 'class-validator';
 
-export class UpdateMemberDto {
+export class CreateUserDto {
   @IsOptional()
   @IsString()
   @Length(2, 50)
-  name?: string;
+  id?: string;
+
+  @IsString()
+  @Length(2, 50)
+  name!: string;
 
   @IsOptional()
   @IsString()

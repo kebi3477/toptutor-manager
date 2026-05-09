@@ -1,37 +1,37 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Entity,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryColumn({ type: 'varchar', length: 50 })
+  id!: string;
 
-  @Column({ unique: true })
-  email: string;
+  @Column({ type: 'varchar', length: 100, nullable: true, default: null })
+  email!: string | null;
 
-  @Column()
-  passwordHash: string;
+  @Column({ name: 'password_hash', type: 'varchar', length: 100, nullable: true, default: null })
+  passwordHash!: string | null;
 
-  @Column()
-  name: string;
+  @Column({ type: 'varchar', length: 50 })
+  name!: string;
 
-  @Column({ nullable: true })
-  teamId: string;
+  @Column({ name: 'team_id', type: 'varchar', length: 50, nullable: true, default: null })
+  teamId!: string | null;
 
-  @Column({ default: '사원' })
-  role: string;
+  @Column({ type: 'varchar', length: 20, default: '사원' })
+  role!: string;
 
-  @Column({ default: false })
-  isAdmin: boolean;
+  @Column({ name: 'is_admin', type: 'boolean', default: false })
+  isAdmin!: boolean;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
 }

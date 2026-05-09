@@ -371,7 +371,7 @@ function EditMemberModal({
   onSave: (id: string, data: { name: string; teamId: string; role: Member['role'] }) => Promise<void>;
 }) {
   const [name, setName] = useState(member.name);
-  const [teamId, setTeamId] = useState(member.teamId);
+  const [teamId, setTeamId] = useState(member.teamId ?? teams[0]?.id ?? '');
   const [role, setRole] = useState<Member['role']>(member.role);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

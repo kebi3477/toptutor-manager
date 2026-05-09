@@ -187,7 +187,7 @@ function Dashboard({ isAdmin }: DashboardProps) {
                 {todays.map(e => {
                   const m = getMember(e.userId, members);
                   if (!m) return null;
-                  const t = getTeam(m.teamId);
+                  const t = m.teamId ? getTeam(m.teamId) : null;
                   const returnDate = addDays(parseDate(e.endDate), 1);
                   const isNextDay = isSameDay(returnDate, addDays(today, 1));
                   return (
@@ -196,7 +196,7 @@ function Dashboard({ isAdmin }: DashboardProps) {
                         <Avatar member={m} size="lg" />
                         <div style={{ minWidth: 0 }}>
                           <div className={styles.leaveCardName}>{m.name}</div>
-                          <div className={styles.leaveCardTeam}>{t.name}</div>
+                          <div className={styles.leaveCardTeam}>{t?.name ?? '—'}</div>
                         </div>
                       </div>
                       <div className={styles.leaveCardMeta}>

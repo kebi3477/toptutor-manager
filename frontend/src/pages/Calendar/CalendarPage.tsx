@@ -87,7 +87,7 @@ function ChipDetailPopover({
 function PersonalDetail({ event: e, members }: { event: PersonalEvent; members: Member[] }) {
   const member = getMember(e.userId, members);
   if (!member) return null;
-  const team = getTeam(member.teamId);
+  const team = member.teamId ? getTeam(member.teamId) : null;
   const typeLabel =
     e.type === 'half' ? (e.half === 'AM' ? '오전 반차' : '오후 반차')
     : e.type === 'trip' ? e.label
@@ -101,8 +101,8 @@ function PersonalDetail({ event: e, members }: { event: PersonalEvent; members: 
         <div>
           <div className={styles.popoverName}>{member.name}</div>
           <div className={styles.popoverTeam}>
-            <span className={styles.teamDot} style={{ background: team.color }} />
-            {team.name}
+            <span className={styles.teamDot} style={{ background: team?.color ?? 'var(--text-3)' }} />
+            {team?.name ?? '—'}
           </div>
         </div>
       </div>

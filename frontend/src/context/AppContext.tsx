@@ -7,7 +7,6 @@ export type EditingEvent =
 
 interface AppContextType {
   isAdmin: boolean;
-  setIsAdmin: (v: boolean) => void;
   showCreateEvent: boolean;
   setShowCreateEvent: (v: boolean) => void;
   createEventInitialDate: string | null;
@@ -41,7 +40,6 @@ function loadStoredUser(): AuthUser | null {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [createEventInitialDate, setCreateEventInitialDate] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<EditingEvent | null>(null);
@@ -49,6 +47,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [companyEvents, setCompanyEvents] = useState<CompanyEvent[]>([]);
   const [personalEvents, setPersonalEvents] = useState<PersonalEvent[]>([]);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(loadStoredUser);
+
+  const isAdmin = currentUser?.isAdmin ?? false;
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -58,14 +58,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      isAdmin, setIsAdmin,
+      isAdmin,
       showCreateEvent, setShowCreateEvent,
       createEventInitialDate, setCreateEventInitialDate,
       editingEvent, setEditingEvent,
       members, setMembers,
       companyEvents, setCompanyEvents,
       personalEvents, setPersonalEvents,
-      currentUser, setCurrentUser, logout,
+      currentUser, setCurrentUser,
+      logout,
     }}>
       {children}
     </AppContext.Provider>

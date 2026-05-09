@@ -71,7 +71,7 @@ export class AuthService {
     const entry = this.pending.get(userEmail);
     if (!entry) throw new BadRequestException('인증 정보를 찾을 수 없습니다. 처음부터 다시 시도해주세요.');
 
-    const user = await this.users.create({
+    const user = await this.users.createFromAuth({
       email: userEmail,
       passwordHash: entry.passwordHash,
       name,
@@ -88,6 +88,7 @@ export class AuthService {
     const user = await this.users.findByEmail(userEmail);
     if (!user) throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
 
+    if (!user.passwordHash) throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
     const match = await bcrypt.compare(password, user.passwordHash);
     if (!match) throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
 
@@ -101,7 +102,7 @@ export class AuthService {
   }
 
   private buildAuthResponse(user: User): AuthResponse {
-    const accessToken = this.jwt.sign({ sub: user.id, email: user.email });
+    const accessToken = this.jwt.sign({ sub: user.id, email: user.email ?? '' });
     return { accessToken, user: this.toAuthUser(user) };
   }
 

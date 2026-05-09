@@ -8,15 +8,15 @@ interface AvatarProps {
 }
 
 function Avatar({ member, size }: AvatarProps) {
-  const team = getTeam(member.teamId);
+  const team = member.teamId ? getTeam(member.teamId) : null;
   const initial = member.name.slice(-2);
   const cls = ['avatar', size === 'lg' ? 'lg' : size === 'sm' ? 'sm' : ''].filter(Boolean).join(' ');
 
   return (
     <div
       className={cls}
-      style={{ background: team.color }}
-      title={`${member.name} · ${team.name}`}
+      style={{ background: team?.color ?? 'var(--text-3)' }}
+      title={`${member.name}${team ? ` · ${team.name}` : ''}`}
     >
       {initial}
     </div>

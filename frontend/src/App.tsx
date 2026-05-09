@@ -42,7 +42,7 @@ function PublicRoute({ isLoggedIn }: { isLoggedIn: boolean }) {
 
 function AppShell() {
   const location = useLocation();
-  const { isAdmin, setIsAdmin, showCreateEvent, setShowCreateEvent, setCreateEventInitialDate, setMembers, setCompanyEvents, setPersonalEvents } = useAppContext();
+  const { isAdmin, showCreateEvent, setShowCreateEvent, setCreateEventInitialDate, setMembers, setCompanyEvents, setPersonalEvents } = useAppContext();
 
   useEffect(() => {
     membersApi.getAll().then(setMembers).catch(() => {});
@@ -53,26 +53,11 @@ function AppShell() {
   const meta = PAGE_META[location.pathname] ?? { title: '' };
   const isCalendarish = location.pathname === '/dashboard' || location.pathname === '/calendar';
 
-  const adminToggle = (
-    <button
-      className={`btn ${isAdmin ? 'btn-primary' : ''}`}
-      onClick={() => setIsAdmin(!isAdmin)}
-      style={{ fontSize: 12 }}
-    >
-      {isAdmin ? '관리자 모드 ON' : '관리자 모드 OFF'}
+  const topbarActions = isCalendarish ? (
+    <button className="btn btn-primary" onClick={() => { setCreateEventInitialDate(null); setShowCreateEvent(true); }}>
+      <Icon name="plus" size={14} /> 일정 등록
     </button>
-  );
-
-  const topbarActions = (
-    <div className="row" style={{ gap: 8 }}>
-      {adminToggle}
-      {isCalendarish && (
-        <button className="btn btn-primary" onClick={() => { setCreateEventInitialDate(null); setShowCreateEvent(true); }}>
-          <Icon name="plus" size={14} /> 일정 등록
-        </button>
-      )}
-    </div>
-  );
+  ) : null;
 
   return (
     <div className={styles.app}>

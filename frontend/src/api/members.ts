@@ -8,12 +8,12 @@ export interface CreateMemberPayload {
 }
 
 export const membersApi = {
-  getAll: () => request<Member[]>('/members'),
-  getOne: (id: string) => request<Member>(`/members/${id}`),
+  getAll: () => request<Member[]>('/users'),
+  getOne: (id: string) => request<Member>(`/users/${id}`),
   create: (data: CreateMemberPayload) =>
-    request<Member>('/members', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: Partial<CreateMemberPayload>) =>
-    request<Member>(`/members/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    request<Member>('/users', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<CreateMemberPayload & { isAdmin: boolean }>) =>
+    request<Member>(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   remove: (id: string) =>
-    request<void>(`/members/${id}`, { method: 'DELETE' }),
+    request<void>(`/users/${id}`, { method: 'DELETE' }),
 };

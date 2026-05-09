@@ -13,7 +13,7 @@ import styles from './UsersAdmin.module.scss';
 interface UserEditModalProps {
   member?: Member;
   onClose: () => void;
-  onSave: (data: { name: string; teamId: string; role: Member['role'] }) => Promise<void>;
+  onSave: (data: { name: string; teamId: string; role: Member['role']; isAdmin: boolean }) => Promise<void>;
   onDelete?: () => Promise<void>;
   mode: 'add' | 'edit';
 }
@@ -22,6 +22,7 @@ function UserEditModal({ member, onClose, onSave, onDelete, mode }: UserEditModa
   const [name, setName] = useState(member?.name || '');
   const [team, setTeam] = useState(member?.teamId || TEAMS[0].id);
   const [role, setRole] = useState<Member['role']>(member?.role || '사원');
+  const [isAdmin, setIsAdmin] = useState(member?.isAdmin ?? false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,7 +30,7 @@ function UserEditModal({ member, onClose, onSave, onDelete, mode }: UserEditModa
     if (!name.trim()) { setError('이름을 입력해주세요.'); return; }
     setLoading(true);
     try {
-      await onSave({ name: name.trim(), teamId: team, role });
+      await onSave({ name: name.trim(), teamId: team, role, isAdmin });
     } catch {
       setError('저장 중 오류가 발생했습니다.');
     } finally {
@@ -100,6 +101,21 @@ function UserEditModal({ member, onClose, onSave, onDelete, mode }: UserEditModa
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="field">
+            <label className="field-label">관리자 권한</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none' }}>
+              <input
+                type="checkbox"
+                className="cb"
+                checked={isAdmin}
+                onChange={e => setIsAdmin(e.target.checked)}
+                disabled={loading}
+              />
+              <span style={{ fontSize: 13.5 }}>관리자로 지정</span>
+              {isAdmin && <span className="admin-pill">ADMIN</span>}
+            </label>
           </div>
 
           {error && <div className="muted" style={{ color: 'var(--red)', fontSize: 12.5 }}>{error}</div>}
@@ -185,7 +201,7 @@ function UsersAdmin() {
 
   const filtered = members.filter(m => {
     if (search && !m.name.includes(search)) return false;
-    if (teamFilter !== 'all' && m.teamId !== teamFilter) return false;
+    if (teamFilter !== 'all' && (m.teamId ?? '') !== teamFilter) return false;
     if (roleFilter !== 'all' && m.role !== roleFilter) return false;
     return true;
   });
@@ -201,16 +217,16 @@ function UsersAdmin() {
 
   // ── 단건 저장 ──────────────────────────────────────────────────
 
-  const handleAdd = async (data: { name: string; teamId: string; role: Member['role'] }) => {
+  const handleAdd = async (data: { name: string; teamId: string; role: Member['role']; isAdmin: boolean }) => {
     const created = await membersApi.create(data);
     setMembers([...members, created]);
     setShowAdd(false);
   };
 
-  const handleEdit = async (data: { name: string; teamId: string; role: Member['role'] }) => {
+  const handleEdit = async (data: { name: string; teamId: string; role: Member['role']; isAdmin: boolean }) => {
     if (!editing) return;
     const updated = await membersApi.update(editing.id, data);
-    setMembers(members.map(m => m.id === updated.id ? updated : m));
+    setMembers(members.map(m => m.id === updated.id ? { ...m, ...updated } : m));
     setEditing(null);
   };
 
@@ -358,7 +374,7 @@ function UsersAdmin() {
           </thead>
           <tbody>
             {filtered.map(m => {
-              const t = getTeam(m.teamId);
+              const t = m.teamId ? getTeam(m.teamId) : null;
               const leave = leaves.find(e => e.userId === m.id);
               const checked = selectedIds.includes(m.id);
               return (
@@ -368,14 +384,21 @@ function UsersAdmin() {
                   </td>
                   <td><Avatar member={m} /></td>
                   <td>
-                    <div style={{ fontWeight: 600 }}>{m.name}</div>
-                    <div className="muted" style={{ fontSize: 11, marginTop: 1 }}>{m.id}@mothertongue.kr</div>
+                    <div className="row" style={{ gap: 6 }}>
+                      <span style={{ fontWeight: 600 }}>{m.name}</span>
+                      {m.isAdmin && <span className="admin-pill">ADMIN</span>}
+                    </div>
+                    <div className="muted" style={{ fontSize: 11, marginTop: 1 }}>
+                      {m.email ?? <span style={{ opacity: 0.45 }}>이메일 없음</span>}
+                    </div>
                   </td>
                   <td>
-                    <span className="team-tag">
-                      <span className="team-row-color" style={{ background: t.color }} />
-                      {t.name}
-                    </span>
+                    {t ? (
+                      <span className="team-tag">
+                        <span className="team-row-color" style={{ background: t.color }} />
+                        {t.name}
+                      </span>
+                    ) : <span className="muted">—</span>}
                   </td>
                   <td>
                     <span className={`role-pill role-${m.role === '팀장' ? 'lead' : m.role === '매니저' ? 'mgr' : 'staff'}`}>

@@ -34,7 +34,7 @@ function EventChip(props: EventChipProps) {
   const { event } = props;
   const member = getMember(event.userId, members);
   if (!member) return null;
-  const team = getTeam(member.teamId);
+  const team = member.teamId ? getTeam(member.teamId) : null;
   const cls = event.type === 'half' ? 'chip-half' : event.type === 'trip' ? 'chip-trip' : 'chip-leave';
   const label = event.type === 'half'
     ? (event.half === 'AM' ? '오전반차' : '오후반차')
@@ -43,7 +43,7 @@ function EventChip(props: EventChipProps) {
 
   return (
     <div className={`cal-chip ${cls}`} title={`${member.name} · ${event.label}`}>
-      <span className="cal-chip-dot" style={{ background: team.color }} />
+      <span className="cal-chip-dot" style={{ background: team?.color ?? 'var(--text-3)' }} />
       <span className="truncate">{member.name} {label}</span>
     </div>
   );

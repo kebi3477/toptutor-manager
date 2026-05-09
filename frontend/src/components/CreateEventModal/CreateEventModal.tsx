@@ -81,7 +81,7 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
 
   const me = members[0];
   if (!me) return null;
-  const myTeam = getTeam(me.teamId);
+  const myTeam = me.teamId ? getTeam(me.teamId) : null;
 
   const typeOptions = [
     { id: 'leave' as EventType, label: '연차', desc: '종일 휴가' },
@@ -176,7 +176,7 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
               <Avatar member={me} />
               <div>
                 <div className={styles.userName}>{me.name}</div>
-                <div className="muted" style={{ fontSize: 11 }}>{myTeam.name} · 본인 일정 등록</div>
+                <div className="muted" style={{ fontSize: 11 }}>{myTeam?.name ?? ''} · 본인 일정 등록</div>
               </div>
             </div>
           )}

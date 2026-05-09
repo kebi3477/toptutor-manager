@@ -5,7 +5,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MealsModule } from './meals/meals.module';
 import { TeamsModule } from './teams/teams.module';
-import { MembersModule } from './members/members.module';
 import { EventsModule } from './events/events.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
@@ -33,7 +32,6 @@ import { AuthModule } from './auth/auth.module';
     }),
     MealsModule,
     TeamsModule,
-    MembersModule,
     EventsModule,
     UsersModule,
     AuthModule,

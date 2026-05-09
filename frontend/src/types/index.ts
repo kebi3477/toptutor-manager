@@ -19,8 +19,10 @@ export interface UpdateTeamPayload {
 export interface Member {
   id: string;
   name: string;
-  teamId: string;
+  teamId: string | null;
   role: '팀장' | '매니저' | '사원';
+  email?: string | null;
+  isAdmin?: boolean;
 }
 
 export interface CompanyEvent {
@@ -80,7 +82,7 @@ export type PageId = 'dashboard' | 'calendar' | 'meals' | 'teams' | 'users' | 'm
 
 export interface AuthUser {
   id: string;
-  email: string;
+  email: string | null;
   name: string;
   teamId: string | null;
   role: string;
