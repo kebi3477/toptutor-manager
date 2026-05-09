@@ -22,6 +22,7 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
     setPersonalEvents, setCompanyEvents,
     createEventInitialDate,
     editingEvent, setEditingEvent,
+    currentUser,
   } = useAppContext();
 
   const [type, setType] = useState<EventType>('leave');
@@ -79,7 +80,7 @@ function CreateEventModal({ open, onClose, isAdmin }: CreateEventModalProps) {
 
   if (!open) return null;
 
-  const me = users[0];
+  const me = users.find(u => u.id === currentUser?.id) ?? null;
   if (!me) return null;
   const myTeam = me.teamId ? getTeam(me.teamId) : null;
 
