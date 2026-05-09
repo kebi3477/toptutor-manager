@@ -136,3 +136,45 @@
   margin-top: 4px;
   letter-spacing: -0.02em;
 }
+
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Mobile ─────────────────────────────── */
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px 16px 48px;
+  }
+
+  /* 2열 → 1열 스택 */
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* sticky 패널 해제 — 리스트가 상단에 일반 흐름으로 */
+  .listCard {
+    position: static;
+    max-height: none;
+  }
+
+  /* 팀 통계 5열 → 가로 스크롤 */
+  .teamStats {
+    overflow-x: auto;
+    grid-template-columns: repeat(5, minmax(80px, 1fr));
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 테이블 최소 너비 확보 */
+  .tableWrap :global(.user-table) {
+    min-width: 420px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 12px 12px 40px;
+  }
+}

@@ -336,3 +336,70 @@
   font-size: 12px;
   margin-top: 4px;
 }
+
+/* ── Mobile ─────────────────────────────── */
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px 16px 48px;
+  }
+
+  /* 좌우 2열 → 상하 1열 */
+  .editLayout {
+    grid-template-columns: 1fr;
+  }
+
+  /* 세로 탭 → 가로 스크롤 탭 */
+  .dayTabs {
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px;
+    padding: 8px;
+  }
+
+  .dayTab {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    width: auto;
+    padding: 8px 14px;
+    white-space: nowrap;
+  }
+
+  .dayTabName {
+    font-size: 13px;
+  }
+
+  /* 상태 텍스트(메뉴 개수 등) 숨김 */
+  .dayTabStatus {
+    display: none;
+  }
+
+  /* 미리보기 → 가로 스크롤 */
+  .previewGrid {
+    overflow-x: auto;
+    grid-template-columns: repeat(5, minmax(130px, 1fr));
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .previewCard {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 12px 12px 40px;
+  }
+
+  .weekTitle {
+    font-size: 16px;
+  }
+
+  .editor {
+    padding: 16px;
+  }
+}

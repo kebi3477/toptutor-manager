@@ -85,6 +85,18 @@
   margin-top: 4px;
 }
 
+/* ── Mobile ─────────────────────────────── */
+
+@media (max-width: 480px) {
+  .page {
+    padding: 16px 16px 40px;
+  }
+
+  .section {
+    padding: 20px 16px;
+  }
+}
+
 .spinner {
   width: 13px;
   height: 13px;

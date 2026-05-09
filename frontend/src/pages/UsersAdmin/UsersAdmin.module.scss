@@ -54,3 +54,42 @@
   min-width: 22px;
   text-align: center;
 }
+
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Mobile ─────────────────────────────── */
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px 16px 48px;
+  }
+
+  /* 테이블 최소 너비 확보 */
+  .tableWrap :global(.user-table) {
+    min-width: 540px;
+  }
+
+  /* card-hd 우측 컨트롤들 줄바꿈 허용 */
+  .content :global(.card-hd) {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .content :global(.card-hd .row) {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 12px 12px 40px;
+  }
+
+  .summaryChip {
+    font-size: 11.5px;
+    padding: 5px 10px;
+  }
+}

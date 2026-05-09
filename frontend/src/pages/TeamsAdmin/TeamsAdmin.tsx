@@ -628,6 +628,7 @@ function TeamsAdmin() {
                   <button className="btn btn-primary" onClick={() => setModal({ type: 'assign' })} type="button"><Icon name="plus" size={14} /> 팀원 배정</button>
                 </div>
               </div>
+              <div className={styles.tableWrap}>
               <table className="user-table">
                 <thead>
                   <tr>
@@ -703,6 +704,7 @@ function TeamsAdmin() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         ) : (

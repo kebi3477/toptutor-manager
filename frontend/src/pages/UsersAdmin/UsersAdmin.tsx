@@ -358,6 +358,7 @@ function UsersAdmin() {
           </div>
         )}
 
+        <div className={styles.tableWrap}>
         <table className="user-table">
           <thead>
             <tr>
@@ -427,6 +428,7 @@ function UsersAdmin() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {showAdd && (
