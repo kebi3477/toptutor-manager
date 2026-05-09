@@ -15,11 +15,14 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (res.status === 401) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('auth_user');
-    localStorage.removeItem('auth');
-    window.location.href = '/';
-    throw new Error('Unauthorized');
+    if (localStorage.getItem('token')) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('auth_user');
+      localStorage.removeItem('auth');
+      window.location.href = '/';
+      throw new Error('Unauthorized');
+    }
+    // 토큰 없음 = 로그인 시도 실패 → 아래 !res.ok 에서 서버 에러 메시지 추출
   }
 
   if (!res.ok) {
