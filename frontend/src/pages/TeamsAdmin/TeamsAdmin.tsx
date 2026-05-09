@@ -465,6 +465,7 @@ function TeamsAdmin() {
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState<Modal | null>(null);
   const [editingName, setEditingName] = useState(false);
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   useEffect(() => {
     teamsApi.getAll().then(data => {
@@ -512,6 +513,12 @@ function TeamsAdmin() {
     setUsers(users.map(u => u.id === updated.id ? { ...u, ...updated } : u));
   }, [users, setUsers]);
 
+  const handleRemoveFromTeam = useCallback(async (id: string) => {
+    await usersApi.update(id, { teamId: null });
+    setUsers(users.map(u => u.id === id ? { ...u, teamId: null } : u));
+    setConfirmRemoveId(null);
+  }, [users, setUsers]);
+
   if (loading) {
     return <div className={styles.content}><div className="muted" style={{ padding: 32 }}>팀 목록을 불러오는 중...</div></div>;
   }
@@ -537,7 +544,7 @@ function TeamsAdmin() {
                 <div
                   key={t.id}
                   className={`${styles.teamRow} ${selectedId === t.id ? styles.teamRowActive : ''}`}
-                  onClick={() => { setSelectedId(t.id); setEditingName(false); }}
+                  onClick={() => { setSelectedId(t.id); setEditingName(false); setConfirmRemoveId(null); }}
                 >
                   <span className="team-row-color" style={{ background: t.color }} />
                   <span className={`${styles.teamRowName} truncate`}>{t.name}</span>
@@ -628,7 +635,7 @@ function TeamsAdmin() {
                     <th>이름</th>
                     <th>역할</th>
                     <th>오늘 상태</th>
-                    <th style={{ width: 80 }}></th>
+                    <th style={{ width: 120 }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -652,8 +659,39 @@ function TeamsAdmin() {
                             <span className="muted" style={{ fontSize: 12 }}>출근</span>
                           )}
                         </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <button className="btn btn-ghost btn-icon" onClick={() => setModal({ type: 'editUser', user: u })} type="button"><Icon name="edit" size={14} /></button>
+                        <td style={{ textAlign: 'right', paddingRight: 12 }}>
+                          {confirmRemoveId === u.id ? (
+                            <div className="row" style={{ gap: 4, justifyContent: 'flex-end' }}>
+                              <span className="muted" style={{ fontSize: 12 }}>제거?</span>
+                              <button
+                                className="btn btn-ghost"
+                                style={{ padding: '2px 8px', fontSize: 12 }}
+                                onClick={() => setConfirmRemoveId(null)}
+                                type="button"
+                              >취소</button>
+                              <button
+                                className="btn"
+                                style={{ padding: '2px 8px', fontSize: 12, background: 'var(--red)', color: '#fff' }}
+                                onClick={() => handleRemoveFromTeam(u.id)}
+                                type="button"
+                              >확인</button>
+                            </div>
+                          ) : (
+                            <div className="row" style={{ gap: 2, justifyContent: 'flex-end' }}>
+                              <button className="btn btn-ghost btn-icon" onClick={() => setModal({ type: 'editUser', user: u })} type="button">
+                                <Icon name="edit" size={14} />
+                              </button>
+                              <button
+                                className="btn btn-ghost btn-icon"
+                                title="팀에서 제거"
+                                style={{ color: 'var(--red)' }}
+                                onClick={() => setConfirmRemoveId(u.id)}
+                                type="button"
+                              >
+                                <Icon name="x" size={14} />
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
