@@ -26,7 +26,7 @@ import { AuthModule } from './auth/auth.module';
         password: config.get('DB_PASSWORD', ''),
         database: config.get('DB_NAME', 'toptutor_manager'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: config.get('NODE_ENV') !== 'production',
+        synchronize: config.get('DB_SYNC') === 'true' || config.get('NODE_ENV') !== 'production',
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),
