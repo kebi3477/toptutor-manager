@@ -80,6 +80,14 @@ function Sidebar({ isAdmin }: SidebarProps) {
 
       <div className={styles.spacer} />
 
+      <NavLink
+        to="/settings"
+        className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ''}`}
+      >
+        <span className={styles.itemIcon}><Icon name="settings" size={17} /></span>
+        설정
+      </NavLink>
+
       {me && (
         <div className={styles.user}>
           <div className={styles.userAvatar} style={{ background: myTeam?.color ?? 'var(--text-3)' }}>

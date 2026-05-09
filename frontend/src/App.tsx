@@ -10,6 +10,8 @@ import UsersAdmin from './pages/UsersAdmin/UsersAdmin';
 import MealsEdit from './pages/MealsEdit/MealsEdit';
 import LoginPage from './pages/Login/LoginPage';
 import SignupPage from './pages/Signup/SignupPage';
+import ForgotPasswordPage from './pages/ForgotPassword/ForgotPasswordPage';
+import SettingsPage from './pages/Settings/SettingsPage';
 import Icon from './components/Icon/Icon';
 import CreateEventModal from './components/CreateEventModal/CreateEventModal';
 import { AppProvider, useAppContext } from './context/AppContext';
@@ -26,6 +28,7 @@ const PAGE_META: Record<string, { title: string; sub?: string }> = {
   '/teams':     { title: '팀 관리',  sub: '팀 구성 및 팀원 관리' },
   '/users':     { title: '사용자 관리', sub: '전체 임직원 관리' },
   '/meals-edit':{ title: '식단표 등록', sub: '주간 식단 등록 및 편집' },
+  '/settings':  { title: '설정',       sub: '계정 및 보안 설정' },
 };
 
 // ── Auth guard ───────────────────────────────────────────────────────────────
@@ -158,8 +161,9 @@ function AppRoutes() {
     <Routes>
       {/* Public routes — redirect to /dashboard if already logged in */}
       <Route element={<PublicRoute isLoggedIn={isLoggedIn} />}>
-        <Route path="/" element={<LoginPage onLogin={handleLogin} onGoSignup={() => navigate('/signup')} />} />
+        <Route path="/" element={<LoginPage onLogin={handleLogin} onGoSignup={() => navigate('/signup')} onGoForgotPassword={() => navigate('/forgot-password')} />} />
         <Route path="/signup" element={<SignupPage onSignup={handleLogin} onGoLogin={() => navigate('/')} />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage onGoLogin={() => navigate('/')} />} />
       </Route>
 
       {/* Protected routes */}
@@ -171,6 +175,7 @@ function AppRoutes() {
           <Route path="/teams"      element={<TeamsRoutePage />} />
           <Route path="/users"      element={<UsersRoutePage />} />
           <Route path="/meals-edit" element={<MealsEditRoutePage />} />
+          <Route path="/settings"   element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Route>

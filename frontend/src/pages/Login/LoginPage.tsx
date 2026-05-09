@@ -7,9 +7,10 @@ import styles from './LoginPage.module.scss';
 interface LoginPageProps {
   onLogin: (token: string, user: AuthUser) => void;
   onGoSignup: () => void;
+  onGoForgotPassword: () => void;
 }
 
-function LoginPage({ onLogin, onGoSignup }: LoginPageProps) {
+function LoginPage({ onLogin, onGoSignup, onGoForgotPassword }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -90,6 +91,12 @@ function LoginPage({ onLogin, onGoSignup }: LoginPageProps) {
           </div>
 
           {error && <div className={styles.error}><Icon name="x" size={13} /> {error}</div>}
+
+          <div className={styles.forgotRow}>
+            <button type="button" className={styles.forgotLink} onClick={onGoForgotPassword}>
+              비밀번호를 잊으셨나요?
+            </button>
+          </div>
 
           <button
             type="submit"

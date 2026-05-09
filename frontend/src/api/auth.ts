@@ -14,10 +14,10 @@ export const authApi = {
       body: JSON.stringify({ email, code }),
     }),
 
-  completeSignup: (email: string, name: string, teamId: string) =>
+  completeSignup: (email: string, name: string, teamId: string, role?: string) =>
     request<AuthResponse>('/auth/complete-signup', {
       method: 'POST',
-      body: JSON.stringify({ email, name, teamId }),
+      body: JSON.stringify({ email, name, teamId, role }),
     }),
 
   login: (email: string, password: string) =>
@@ -27,4 +27,22 @@ export const authApi = {
     }),
 
   getMe: () => request<AuthUser>('/auth/me'),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>('/auth/change-password', {
+      method: 'PATCH',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+
+  forgotPassword: (email: string) =>
+    request<{ message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (email: string, code: string, newPassword: string) =>
+    request<{ message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, newPassword }),
+    }),
 };

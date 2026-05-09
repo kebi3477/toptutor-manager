@@ -10,4 +10,8 @@ export class CompleteSignupDto {
   @IsOptional()
   @IsString()
   teamId?: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
 }

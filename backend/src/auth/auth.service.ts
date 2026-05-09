@@ -24,6 +24,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly pending = new Map<string, PendingSignup>();
   private readonly verified = new Set<string>();
+  private readonly resetPending = new Map<string, { code: string; expiresAt: number }>();
 
   constructor(
     private readonly users: UsersService,
@@ -63,7 +64,7 @@ export class AuthService {
     this.verified.add(userEmail);
   }
 
-  async completeSignup(userEmail: string, name: string, teamId?: string): Promise<AuthResponse> {
+  async completeSignup(userEmail: string, name: string, teamId?: string, role?: string): Promise<AuthResponse> {
     if (!this.verified.has(userEmail)) {
       throw new BadRequestException('이메일 인증이 완료되지 않았습니다.');
     }
@@ -76,6 +77,7 @@ export class AuthService {
       passwordHash: entry.passwordHash,
       name,
       teamId,
+      role,
     });
 
     this.pending.delete(userEmail);
@@ -93,6 +95,46 @@ export class AuthService {
     if (!match) throw new UnauthorizedException('이메일 또는 비밀번호가 올바르지 않습니다.');
 
     return this.buildAuthResponse(user);
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.users.findById(userId);
+    if (!user) throw new UnauthorizedException();
+    if (!user.passwordHash) throw new BadRequestException('소셜 계정은 비밀번호를 변경할 수 없습니다.');
+    const match = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!match) throw new BadRequestException('현재 비밀번호가 올바르지 않습니다.');
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await this.users.updatePassword(userId, newHash);
+  }
+
+  async forgotPassword(userEmail: string): Promise<void> {
+    const user = await this.users.findByEmail(userEmail);
+    // 보안상 사용자 존재 여부 노출 안 함 — 없어도 성공처럼 처리
+    if (!user || !user.passwordHash) return;
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = Date.now() + 10 * 60 * 1000;
+    this.resetPending.set(userEmail, { code, expiresAt });
+    try {
+      await this.email.sendPasswordResetCode(userEmail, code);
+    } catch (err) {
+      this.resetPending.delete(userEmail);
+      throw new InternalServerErrorException('메일 발송에 실패했습니다. SMTP 설정을 확인해주세요.');
+    }
+  }
+
+  async resetPassword(userEmail: string, code: string, newPassword: string): Promise<void> {
+    const entry = this.resetPending.get(userEmail);
+    if (!entry) throw new BadRequestException('비밀번호 재설정 요청을 찾을 수 없습니다. 다시 시도해주세요.');
+    if (Date.now() > entry.expiresAt) {
+      this.resetPending.delete(userEmail);
+      throw new BadRequestException('인증 코드가 만료되었습니다. 다시 시도해주세요.');
+    }
+    if (entry.code !== code) throw new BadRequestException('인증 코드가 올바르지 않습니다.');
+    const user = await this.users.findByEmail(userEmail);
+    if (!user) throw new BadRequestException('사용자를 찾을 수 없습니다.');
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await this.users.updatePassword(user.id, newHash);
+    this.resetPending.delete(userEmail);
   }
 
   async getMe(userId: string): Promise<AuthUser> {

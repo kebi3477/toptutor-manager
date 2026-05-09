@@ -80,6 +80,10 @@ export class UsersService implements OnModuleInit {
     return this.repo.findOne({ where: { id } });
   }
 
+  async updatePassword(id: string, passwordHash: string): Promise<void> {
+    await this.repo.update(id, { passwordHash });
+  }
+
   async createFromAuth(data: CreateAuthUserData): Promise<User> {
     const user = this.repo.create({
       id: randomUUID(),
