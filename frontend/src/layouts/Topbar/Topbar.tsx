@@ -18,12 +18,12 @@ function Topbar({ title, sub, actions }: TopbarProps) {
       <div className={styles.spacer} />
       <div className={styles.actions}>
         {actions}
-        <button className="btn btn-icon btn-ghost" title="검색">
+        {/* <button className="btn btn-icon btn-ghost" title="검색">
           <Icon name="search" size={16} />
         </button>
         <button className="btn btn-icon btn-ghost" title="알림">
           <Icon name="bell" size={16} />
-        </button>
+        </button> */}
       </div>
     </div>
   );
