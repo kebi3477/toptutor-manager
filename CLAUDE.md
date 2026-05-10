@@ -23,16 +23,23 @@ cd frontend && npm start
 toptutor-manager/
 ├── backend/   # NestJS 11, TypeORM, PostgreSQL
 │   └── src/
+│       ├── auth/      # JWT 인증 (로그인·회원가입·비밀번호 재설정)
+│       ├── email/     # Nodemailer 이메일 서비스 (인증코드·비밀번호 재설정)
+│       ├── events/    # 회사·개인 일정 API (company_events, personal_events 테이블)
 │       ├── meals/     # 식단표 API (meal_days 테이블)
-│       └── teams/     # 팀 API (teams 테이블)
+│       ├── teams/     # 팀 API (teams 테이블)
+│       └── users/     # 사용자 API (users 테이블)
 ├── frontend/  # React 19, TypeScript, SCSS Modules
 │   └── src/
-│       ├── api/       # HTTP 클라이언트 (base / meals / teams)
+│       ├── api/       # HTTP 클라이언트 (base / auth / meals / teams / users / events)
+│       ├── context/   # AppContext (전역 상태: auth, events, users)
+│       ├── layouts/   # Sidebar, Topbar
 │       ├── pages/     # 라우트 페이지
-│       ├── components/# 재사용 UI (Avatar, Icon, EventChip)
-│       ├── data/      # 목 데이터 (MEMBERS, COMPANY_EVENTS, PERSONAL_EVENTS 등)
+│       ├── components/# 재사용 UI (Avatar, Icon, EventChip, CreateEventModal)
+│       ├── data/      # 레거시 목 데이터 (MEMBERS — teams와 연결 참조용)
 │       ├── types/     # TypeScript 인터페이스
-│       └── styles/    # 글로벌 디자인 시스템 (global.scss)
+│       ├── styles/    # 글로벌 디자인 시스템 (global.scss)
+│       └── utils/     # 날짜 유틸 (date.ts)
 └── design/    # 디자인 시안 파일 (참고용)
 ```
 
@@ -58,6 +65,18 @@ dto/update-<domain>.dto.ts
 - CORS: `http://localhost:3000` 허용
 - DB: PostgreSQL, `synchronize: true` (개발), `.env`에서 설정
 
+### 인증 (Auth)
+- JWT 기반 인증 (`@nestjs/jwt`, `passport-jwt`)
+- 토큰은 프론트에서 `Authorization: Bearer <token>` 헤더로 전송
+- 보호가 필요한 엔드포인트에 `@UseGuards(JwtAuthGuard)` 적용
+- 회원가입 플로우: 이메일 인증코드 발송 → 코드 확인 → 프로필 등록 순서
+- 비밀번호: `bcrypt` 해싱, 평문 저장 절대 금지
+
+### Email 서비스
+- `EmailModule`/`EmailService` (Nodemailer) → `AuthModule`에서 import
+- `.env`의 `MAIL_*` 환경변수로 SMTP 설정
+- 인증코드 발송, 비밀번호 재설정 이메일 담당
+
 ### Seeding
 서비스에서 `OnModuleInit` 구현 → `count === 0` 일 때만 초기 데이터 삽입.
 
@@ -66,24 +85,36 @@ dto/update-<domain>.dto.ts
 - 타임스탬프: `@CreateDateColumn`, `@UpdateDateColumn`
 - JSONB 배열: `@Column({ type: 'jsonb', nullable: true })`
 
+### 현재 엔티티 & 테이블
+
+| 엔티티 | 테이블 | PK | 주요 필드 |
+|--------|--------|-----|----------|
+| User | `users` | varchar | `email`, `passwordHash`, `teamId`, `role`, `isAdmin` |
+| Team | `teams` | varchar | `name`, `color`, `order` |
+| MealDay | `meal_days` | uuid | `date`(unique), `weekStart`, `day`, `lunch`(jsonb), `holiday` |
+| CompanyEvent | `company_events` | varchar | `title`, `date`, `startDate`, `endDate`, `time`, `location`, `type` |
+| PersonalEvent | `personal_events` | varchar | `userId`, `type`, `startDate`, `endDate`, `half`, `label` |
+
 ---
 
 ## 프론트엔드 규칙
 
 ### 라우팅 (`App.tsx`)
 ```
-/ (공개)           → LoginPage
-/signup (공개)     → SignupPage
-/dashboard         → Dashboard
-/calendar          → CalendarPage
-/meals             → MealsPage
-/meals-edit        → MealsEdit   (어드민 전용)
-/teams             → TeamsAdmin  (어드민 전용)
-/users             → UsersAdmin  (어드민 전용)
+/ (공개)              → LoginPage
+/signup (공개)        → SignupPage
+/forgot-password (공개) → ForgotPasswordPage
+/dashboard            → Dashboard
+/calendar             → CalendarPage
+/meals                → MealsPage
+/meals-edit           → MealsEdit      (어드민 전용)
+/teams                → TeamsAdmin     (어드민 전용)
+/users                → UsersAdmin     (어드민 전용)
+/settings             → SettingsPage
 ```
-- `PrivateRoute`: 미로그인 시 `/` 리다이렉트
+- `PrivateRoute`: 미로그인 시 `/` 리다이렉트 (localStorage `auth` 키 확인)
 - `PublicRoute`: 로그인 상태면 `/dashboard` 리다이렉트
-- 어드민 전용 페이지: `isAdmin` 이 false면 placeholder 렌더링
+- 어드민 전용 페이지: `isAdmin` 이 false면 `PlaceholderPage` 렌더링
 
 ### API 클라이언트 (`src/api/`)
 도메인별로 파일 분리. 새 API 추가 시:
@@ -99,8 +130,19 @@ export const fooApi = {
 };
 ```
 
+**base.ts 특이사항:**
+- localStorage의 `auth` 파싱 → `accessToken`을 `Authorization: Bearer` 헤더에 자동 추가
+- 401 응답 수신 시 localStorage 초기화 후 `/` 리다이렉트
+
+**현재 API 파일:**
+- `auth.ts` — authApi (signup, verifyEmail, completeSignup, login, getMe, changePassword, forgotPassword, resetPassword)
+- `teams.ts` — teamsApi (getAll, create, update, remove)
+- `meals.ts` — mealsApi (getWeeks, getWeek, updateDay, saveWeek)
+- `users.ts` — usersApi (getAll, getOne, create, update, remove)
+- `events.ts` — eventsApi (getAllCompany, createCompany, updateCompany, removeCompany, getAllPersonal, createPersonal, updatePersonal, removePersonal)
+
 ### 상태 관리
-- 전역 상태: `AppContext` (`isAdmin`, `showCreateEvent`)
+- 전역 상태: `AppContext` (`context/AppContext.tsx`)
 - 로컬 상태: `useState` + `useEffect` + `useCallback`
 - API 응답으로 UI 상태 업데이트 시 **로컬 merge** 원칙 (API 응답 전체를 교체하지 않음)
 
@@ -111,13 +153,27 @@ setTeams(prev => prev.map(t => t.id === id ? { ...t, color } : t));
 setTeams(prev => prev.map(t => t.id === updated.id ? updated : t));
 ```
 
-### 목 데이터 (`src/data/index.ts`)
-아직 API로 전환 안 된 데이터:
-- `MEMBERS` — 전체 직원 49명 (팀 ID로 teams 테이블과 연결)
-- `COMPANY_EVENTS` / `PERSONAL_EVENTS` — 회사 일정 / 휴가
-- `MEALS` — 식단 (실제 API로 대체됨, 레거시 참조용 남아있음)
+**AppContext 보유 상태:**
+```ts
+// Auth
+currentUser: AuthUser | null
+isAdmin: boolean  // currentUser.isAdmin 기반
+logout: () => void
 
-API 연결된 데이터: **Meals**, **Teams**
+// 이벤트 모달
+showCreateEvent: boolean
+createEventInitialDate: string | null
+editingEvent: EditingEvent | null
+
+// 전역 데이터 (AppShell 마운트 시 로드)
+users: User[]
+companyEvents: CompanyEvent[]
+personalEvents: PersonalEvent[]
+```
+
+### 데이터 상태 (`src/data/index.ts`)
+- `MEMBERS` — 목 직원 데이터 (팀 ID로 teams 테이블 연결, 레거시 참조용)
+- 모든 핵심 데이터는 API 연결 완료: **Auth**, **Teams**, **Meals**, **Users**, **Events**
 
 ### 스타일 시스템
 - 글로벌 컴포넌트 클래스: `src/styles/global.scss`
@@ -146,6 +202,11 @@ API 연결된 데이터: **Meals**, **Teams**
 .row .muted .tnum .truncate .empty
 ```
 
+### 모바일 반응형
+- 사이드바: 768px 이하에서 drawer (햄버거 메뉴) 방식으로 전환
+- 주요 브레이크포인트: `768px` (태블릿), `480px` (모바일)
+- 각 페이지 `.module.scss`에 `@media (max-width: 768px)` 블록으로 관리
+
 ### 팀 컬러 팔레트 (`PRESET_COLORS`)
 24색 정의됨 (블루/그린/레드핑크/옐로오렌지 계열 각 6색) — `TeamsAdmin.tsx` 참조.
 
@@ -154,20 +215,37 @@ API 연결된 데이터: **Meals**, **Teams**
 ## 타입 정의 (`src/types/index.ts`)
 
 ```ts
-Team        { id, name, color, order? }
-Member      { id, name, team, role, joinedYear }
-CompanyEvent{ id, title, date?, startDate?, endDate?, time?, location?, type }
-PersonalEvent{ id, userId, type, startDate, endDate, half?, label }
-MealDay     { date, day, weekStart?, breakfast?, lunch, holiday? }
-CreateTeamPayload  { id, name, color }
-UpdateTeamPayload  { name?, color? }
+// 인증
+AuthUser      { id, email, name, teamId, role, isAdmin }
+AuthResponse  { accessToken, user: AuthUser }
+
+// 도메인
+Team          { id, name, color, order? }
+User          { id, name, teamId, role, email?, isAdmin? }
+CompanyEvent  { id, title, date?, startDate?, endDate?, time?, location?, type }
+PersonalEvent { id, userId, type, startDate, endDate, half?, label }
+MealDay       { date, day, weekStart?, breakfast?, lunch, holiday? }
+
+// 페이로드
+CreateTeamPayload      { id, name, color }
+UpdateTeamPayload      { name?, color? }
+CreateCompanyEventPayload  { title, date?, startDate?, endDate?, time?, location?, type }
+CreatePersonalEventPayload { userId, type, startDate, endDate, half?, label }
 ```
 
 ---
 
-## 인증
-- 로그인 상태: `localStorage('auth')` key 여부로 판단
-- 어드민 모드: `AppContext.isAdmin` toggle (Topbar에서 전환)
+## 인증 플로우
+
+```
+회원가입: POST /auth/signup → POST /auth/verify-email → POST /auth/complete-signup
+로그인:   POST /auth/login → accessToken 수신 → localStorage 저장
+인증확인: GET /auth/me (JWT 헤더)
+비밀번호: PATCH /auth/change-password / POST /auth/forgot-password / POST /auth/reset-password
+```
+
+- 로그인 상태: `localStorage('auth')` JSON 파싱 후 `accessToken` 유무로 판단
+- 어드민 여부: `AppContext.isAdmin` = `currentUser.isAdmin` (DB 기반, Topbar 표시 여부와 무관)
 
 ---
 
@@ -179,6 +257,10 @@ UpdateTeamPayload  { name?, color? }
 3. `frontend/src/api/<domain>.ts` 생성 후 `api/index.ts` re-export
 4. `types/index.ts` 에 인터페이스 추가
 
-**기존 목 데이터 API 전환:**
-- 해당 페이지의 `data` import를 제거하고 `useEffect`로 API 호출
-- 초기 `useState([])` + loading state 패턴 사용
+**보호된 엔드포인트 추가:**
+- 컨트롤러에 `@UseGuards(JwtAuthGuard)` 데코레이터 추가
+- `@Request() req` 에서 `req.user` (AuthUser)로 현재 사용자 접근
+
+**이벤트 생성 모달 트리거:**
+- `AppContext.setShowCreateEvent(true)` 호출
+- 날짜 지정 시 `setCreateEventInitialDate('YYYY-MM-DD')` 함께 호출
