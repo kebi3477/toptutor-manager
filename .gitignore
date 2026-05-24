@@ -56,3 +56,10 @@ desktop.ini
 
 # React
 /frontend/build/
+
+# SSL 인증서 (실제 파일은 서버에서만 관리)
+/nginx/certs/*.crt
+/nginx/certs/*.key
+/nginx/certs/*.pem
+/nginx/certs/*.p12
+/nginx/certs/*.pfx

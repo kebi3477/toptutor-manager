@@ -24,14 +24,17 @@
 
 ## 시작하기
 
-### 요구사항
+### 개발 환경
 
-- Node.js 18+
-- PostgreSQL 14+
+**요구사항**
 
-### 환경 설정
+- Node.js 22+
+- PostgreSQL 16+
 
-**백엔드** (`backend/.env`)
+**환경 설정**
+
+`backend/.env` 파일 생성:
+
 ```env
 DB_HOST=localhost
 DB_PORT=5432
@@ -43,19 +46,14 @@ NODE_ENV=development
 
 JWT_SECRET=your-secret-key
 
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USER=your@gmail.com
-MAIL_PASS=your-app-password
-MAIL_FROM=TopTutor <your@gmail.com>
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=TopTutor <your@gmail.com>
 ```
 
-**프론트엔드** (`frontend/.env`)
-```env
-REACT_APP_API_URL=http://localhost:3001/api
-```
-
-### 설치 및 실행
+**실행**
 
 ```bash
 # 의존성 설치
@@ -68,6 +66,117 @@ cd frontend && npm start          # http://localhost:3000
 ```
 
 DB 테이블은 앱 시작 시 자동 생성(`synchronize: true`)되고, 초기 데이터(팀 12개, 식단 3주)도 자동으로 seed됩니다.
+
+---
+
+## 프로덕션 배포 (Docker + SSL)
+
+### 요구사항
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac)
+  - Windows: WSL2 백엔드 권장 (`wsl --install`)
+- 도메인 및 SSL 인증서 (`.crt` / `.key` 파일)
+
+### 1. 인증서 파일 배치
+
+```
+nginx/certs/
+├── server.crt   ← 인증서 (체인 포함 fullchain 권장)
+└── server.key   ← 개인키
+```
+
+> 인증서 파일은 `.gitignore`에 포함되어 있으므로 서버에서 직접 넣어야 합니다.
+
+### 2. 환경변수 설정
+
+**루트 `.env`** — 도메인 설정:
+
+```env
+DOMAIN=your-domain.com
+```
+
+**`backend/.env`** — `backend/.env.production.example`을 복사 후 값 입력:
+
+```bash
+cp backend/.env.production.example backend/.env
+```
+
+```env
+# Database
+DB_HOST=db
+DB_PORT=5432
+DB_USERNAME=toptutor
+DB_PASSWORD=강력한_비밀번호
+DB_NAME=toptutor_manager
+DB_SYNC=true
+
+# PostgreSQL 컨테이너 초기화 (DB_* 값과 동일하게)
+POSTGRES_USER=toptutor
+POSTGRES_PASSWORD=강력한_비밀번호
+POSTGRES_DB=toptutor_manager
+
+# App
+PORT=3001
+NODE_ENV=production
+
+# JWT
+JWT_SECRET=랜덤_64자_이상_문자열
+JWT_EXPIRES_IN=7d
+
+# CORS
+FRONTEND_URL=https://your-domain.com
+
+# SMTP
+SMTP_HOST=smtp.naver.com
+SMTP_PORT=465
+SMTP_USER=your@email.com
+SMTP_PASS=앱_비밀번호
+SMTP_FROM=TopTutor 매니저 <your@email.com>
+```
+
+### 3. 빌드 및 실행
+
+```bash
+# 처음 실행 또는 코드 변경 후
+docker compose up -d --build
+
+# 로그 확인
+docker compose logs -f
+
+# 중지
+docker compose down
+```
+
+### 4. 자동 시작 (Windows)
+
+Docker Desktop 설정 → **Start Docker Desktop when you log in** 체크.
+`restart: unless-stopped`가 설정되어 있으므로 Docker가 켜지면 컨테이너는 자동으로 재시작됩니다.
+
+### 아키텍처
+
+```
+인터넷 (HTTPS 443 / HTTP 80)
+        ↓
+  frontend 컨테이너 (nginx)
+  ├── HTTP 80  → HTTPS 리다이렉트
+  ├── /*       → React 정적 파일 서빙
+  └── /api/*   → backend 컨테이너 프록시 (내부 네트워크)
+                        ↓
+               backend 컨테이너 (NestJS :3001)
+                        ↓
+               db 컨테이너 (PostgreSQL :5432)
+```
+
+SSL은 nginx(frontend 컨테이너)에서만 처리합니다. 백엔드와 DB는 외부에 노출되지 않으며 Docker 내부 네트워크로만 통신합니다.
+
+### 인증서 교체
+
+인증서 갱신 시 파일만 교체하고 재시작하면 됩니다. 빌드는 불필요합니다.
+
+```bash
+# nginx/certs/ 파일 교체 후
+docker compose restart frontend
+```
 
 ## 프로젝트 구조
 
