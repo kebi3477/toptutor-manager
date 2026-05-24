@@ -17,11 +17,15 @@ services:
     env_file: ./backend/.env
     environment:
       DB_HOST: db
-    ports:
-      - "127.0.0.1:3001:3001"
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     build:
@@ -37,7 +41,8 @@ services:
     volumes:
       - ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   pgdata:

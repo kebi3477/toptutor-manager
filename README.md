@@ -136,6 +136,8 @@ SMTP_FROM=TopTutor 매니저 <your@email.com>
 
 ### 3. 빌드 및 실행
 
+> **최초 배포 시**: `backend/.env`에서 `DB_SYNC=true`로 설정해 테이블을 생성한 뒤, 컨테이너가 정상 기동되면 `DB_SYNC=false`로 변경하고 `docker compose restart backend`를 실행하세요. 이후 스키마 변경은 마이그레이션으로 관리합니다.
+
 ```bash
 # 처음 실행 또는 코드 변경 후
 docker compose up -d --build
