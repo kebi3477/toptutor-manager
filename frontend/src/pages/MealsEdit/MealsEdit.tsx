@@ -378,7 +378,7 @@ function MealsEdit() {
                       <div className={styles.previewCardBody}>
                         <div className={styles.previewSectionLabel}>
                           <span>중식</span>
-                          <span className="muted tnum">12:00 — 13:30</span>
+                          <span className="muted tnum">12:00 — 12:30</span>
                         </div>
                         <ul className={styles.previewMealList}>
                           {(m.lunch || []).filter(x => x).map((x, i) => <li key={i}>{x}</li>)}

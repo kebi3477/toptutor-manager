@@ -131,7 +131,7 @@ function MealsPage({ isAdmin }: MealsPageProps) {
                     <div className={styles.mealSection}>
                       <div className={styles.sectionLabel}>
                         <span>중식</span>
-                        <span className="muted tnum">12:00 — 13:30</span>
+                        <span className="muted tnum">12:00 — 12:30</span>
                       </div>
                       <ul className={styles.mealList}>
                         {(m.lunch || []).map((x, i) => <li key={i}>{x}</li>)}
