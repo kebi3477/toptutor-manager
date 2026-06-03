@@ -46,7 +46,15 @@ function PublicRoute({ isLoggedIn }: { isLoggedIn: boolean }) {
 function AppShell() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
   const { isAdmin, showCreateEvent, setShowCreateEvent, setCreateEventInitialDate, setUsers, setCompanyEvents, setPersonalEvents } = useAppContext();
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(v => {
+      localStorage.setItem('sidebar_collapsed', String(!v));
+      return !v;
+    });
+  };
 
   useEffect(() => {
     usersApi.getAll().then(setUsers).catch(() => {});
@@ -68,8 +76,8 @@ function AppShell() {
   ) : null;
 
   return (
-    <div className={styles.app}>
-      <Sidebar isAdmin={isAdmin} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className={`${styles.app} ${sidebarCollapsed ? styles.appCollapsed : ''}`}>
+      <Sidebar isAdmin={isAdmin} open={sidebarOpen} onClose={() => setSidebarOpen(false)} collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
       {sidebarOpen && <div className={styles.sidebarOverlay} onClick={() => setSidebarOpen(false)} />}
       <div className={styles.main}>
         <Topbar title={meta.title} sub={meta.sub} actions={topbarActions} onMenuClick={() => setSidebarOpen(true)} />

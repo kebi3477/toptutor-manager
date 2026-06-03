@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Icon from '../../components/Icon/Icon';
 import { authApi, teamsApi } from '../../api';
 import type { AuthUser, Team } from '../../types';
@@ -14,6 +14,8 @@ type Step = 1 | 2 | 3;
 function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
   const [step, setStep] = useState<Step>(1);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(false);
+  const [teamsError, setTeamsError] = useState(false);
 
   // Step 1
   const [email, setEmail] = useState('');
@@ -34,9 +36,29 @@ function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    teamsApi.getAll().then(setTeams).catch(() => {});
+  const loadTeams = useCallback(async () => {
+    setTeamsLoading(true);
+    setTeamsError(false);
+    try {
+      const data = await teamsApi.getAll();
+      setTeams(data);
+    } catch {
+      setTeamsError(true);
+    } finally {
+      setTeamsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadTeams();
+  }, [loadTeams]);
+
+  // Step 3에 진입할 때 팀 목록이 비어 있으면 재시도
+  useEffect(() => {
+    if (step === 3 && teams.length === 0 && !teamsLoading) {
+      loadTeams();
+    }
+  }, [step, teams.length, teamsLoading, loadTeams]);
 
   // ── Step 1 ──────────────────────────────────
   const handleStep1 = async (e: React.FormEvent) => {
@@ -281,20 +303,31 @@ function SignupPage({ onSignup, onGoLogin }: SignupPageProps) {
 
               <div className="field">
                 <label className="field-label">소속 팀</label>
-                <div className={styles.teamGrid}>
-                  {teams.map(t => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      className={`${styles.teamChip} ${teamId === t.id ? styles.teamChipActive : ''}`}
-                      onClick={() => setTeamId(t.id)}
-                      style={{ '--team-color': t.color } as React.CSSProperties}
-                    >
-                      <span className={styles.teamDot} />
-                      {t.name}
+                {teamsLoading ? (
+                  <div className={styles.teamsStatus}>팀 목록 불러오는 중...</div>
+                ) : teamsError ? (
+                  <div className={styles.teamsStatus}>
+                    팀 목록을 불러오지 못했습니다.{' '}
+                    <button type="button" className={styles.retryBtn} onClick={loadTeams}>
+                      다시 시도
                     </button>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className={styles.teamGrid}>
+                    {teams.map(t => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        className={`${styles.teamChip} ${teamId === t.id ? styles.teamChipActive : ''}`}
+                        onClick={() => setTeamId(t.id)}
+                        style={{ '--team-color': t.color } as React.CSSProperties}
+                      >
+                        <span className={styles.teamDot} />
+                        {t.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="field">

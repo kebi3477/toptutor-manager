@@ -27,36 +27,41 @@ interface SidebarProps {
   isAdmin: boolean;
   open?: boolean;
   onClose?: () => void;
+  collapsed?: boolean;
+  onToggle?: () => void;
 }
 
-function Sidebar({ isAdmin, open, onClose }: SidebarProps) {
+function Sidebar({ isAdmin, open, onClose, collapsed, onToggle }: SidebarProps) {
   const { currentUser, personalEvents, logout } = useAppContext();
   const me = currentUser;
   const myTeam = me?.teamId ? getTeam(me.teamId) : null;
   const leaveCount = todaysLeaves(personalEvents, TODAY).length;
 
   return (
-    <aside className={`${styles.sidebar} ${open ? styles.open : ''}`}>
+    <aside className={`${styles.sidebar} ${open ? styles.open : ''} ${collapsed ? styles.collapsed : ''}`}>
       <div className={styles.brand}>
         <div className={styles.logo}>M</div>
-        <div>
-          <div className={styles.brandName}>마더텅 매니저</div>
-          <div className={styles.brandSub}>사내 관리</div>
-        </div>
+        {!collapsed && (
+          <div>
+            <div className={styles.brandName}>마더텅 매니저</div>
+            <div className={styles.brandSub}>사내 관리</div>
+          </div>
+        )}
       </div>
 
-      <div className={styles.sectionLabel}>메뉴</div>
+      {!collapsed && <div className={styles.sectionLabel}>메뉴</div>}
 
       {NAV_ITEMS.map(item => (
         <NavLink
           key={item.path}
           to={item.path}
+          title={collapsed ? item.label : undefined}
           className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ''}`}
           onClick={onClose}
         >
           <span className={styles.itemIcon}><Icon name={item.icon} size={17} /></span>
-          {item.label}
-          {item.path === '/dashboard' && leaveCount > 0 && (
+          {!collapsed && item.label}
+          {!collapsed && item.path === '/dashboard' && leaveCount > 0 && (
             <span className={styles.badge}>{leaveCount}</span>
           )}
         </NavLink>
@@ -64,19 +69,22 @@ function Sidebar({ isAdmin, open, onClose }: SidebarProps) {
 
       {isAdmin && (
         <>
-          <div className={styles.sectionLabel} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            관리자
-            <span className="admin-pill">ADMIN</span>
-          </div>
+          {!collapsed && (
+            <div className={styles.sectionLabel} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              관리자
+              <span className="admin-pill">ADMIN</span>
+            </div>
+          )}
           {ADMIN_ITEMS.map(item => (
             <NavLink
               key={item.path}
               to={item.path}
+              title={collapsed ? item.label : undefined}
               className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ''}`}
               onClick={onClose}
             >
               <span className={styles.itemIcon}><Icon name={item.icon} size={17} /></span>
-              {item.label}
+              {!collapsed && item.label}
             </NavLink>
           ))}
         </>
@@ -84,13 +92,27 @@ function Sidebar({ isAdmin, open, onClose }: SidebarProps) {
 
       <div className={styles.spacer} />
 
+      {onToggle && (
+        <button
+          className={`${styles.item} ${styles.collapseBtn}`}
+          onClick={onToggle}
+          title={collapsed ? '사이드바 펼치기' : '사이드바 접기'}
+        >
+          <span className={styles.itemIcon}>
+            <Icon name={collapsed ? 'chevron-right' : 'chevron-left'} size={17} />
+          </span>
+          {!collapsed && '접기'}
+        </button>
+      )}
+
       <NavLink
         to="/settings"
+        title={collapsed ? '설정' : undefined}
         className={({ isActive }) => `${styles.item} ${isActive ? styles.active : ''}`}
         onClick={onClose}
       >
         <span className={styles.itemIcon}><Icon name="settings" size={17} /></span>
-        설정
+        {!collapsed && '설정'}
       </NavLink>
 
       {me && (
@@ -98,18 +120,22 @@ function Sidebar({ isAdmin, open, onClose }: SidebarProps) {
           <div className={styles.userAvatar} style={{ background: myTeam?.color ?? 'var(--text-3)' }}>
             {me.name.slice(-2)}
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div className={`${styles.userName} truncate`}>
-              {me.name}
-              {isAdmin && <span className={styles.adminMark}>&nbsp;·관리자</span>}
-            </div>
-            <div className={styles.userRole}>
-              {myTeam ? `${myTeam.name} · ` : ''}{me.role}
-            </div>
-          </div>
-          <button className={styles.logoutBtn} onClick={logout} title="로그아웃">
-            <Icon name="logout" size={14} />
-          </button>
+          {!collapsed && (
+            <>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div className={`${styles.userName} truncate`}>
+                  {me.name}
+                  {isAdmin && <span className={styles.adminMark}>&nbsp;·관리자</span>}
+                </div>
+                <div className={styles.userRole}>
+                  {myTeam ? `${myTeam.name} · ` : ''}{me.role}
+                </div>
+              </div>
+              <button className={styles.logoutBtn} onClick={logout} title="로그아웃">
+                <Icon name="logout" size={14} />
+              </button>
+            </>
+          )}
         </div>
       )}
     </aside>

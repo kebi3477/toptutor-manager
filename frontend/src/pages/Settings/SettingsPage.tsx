@@ -1,9 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Icon from '../../components/Icon/Icon';
-import { authApi } from '../../api';
+import { authApi, teamsApi, usersApi } from '../../api';
+import { useAppContext } from '../../context/AppContext';
+import type { Team } from '../../types';
 import styles from './SettingsPage.module.scss';
 
 function SettingsPage() {
+  const { currentUser, setCurrentUser } = useAppContext();
+
+  // ── Profile ──────────────────────────────────────────────────────────────
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [profileEditing, setProfileEditing] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profileTeamId, setProfileTeamId] = useState('');
+  const [profileRole, setProfileRole] = useState<'팀장' | '매니저' | '사원'>('사원');
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+
+  useEffect(() => {
+    teamsApi.getAll().then(setTeams).catch(() => {});
+  }, []);
+
+  const startProfileEdit = () => {
+    if (!currentUser) return;
+    setProfileName(currentUser.name);
+    setProfileTeamId(currentUser.teamId ?? '');
+    setProfileRole((currentUser.role as '팀장' | '매니저' | '사원') ?? '사원');
+    setProfileError('');
+    setProfileSuccess('');
+    setProfileEditing(true);
+  };
+
+  const handleProfileSave = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    setProfileError('');
+    setProfileSuccess('');
+
+    if (!profileName.trim()) { setProfileError('이름을 입력해주세요.'); return; }
+    if (!profileTeamId) { setProfileError('소속 팀을 선택해주세요.'); return; }
+
+    setProfileLoading(true);
+    try {
+      const updated = await usersApi.update(currentUser.id, {
+        name: profileName.trim(),
+        teamId: profileTeamId,
+        role: profileRole,
+      });
+      const nextUser = { ...currentUser, name: updated.name, teamId: updated.teamId ?? currentUser.teamId, role: updated.role ?? currentUser.role };
+      setCurrentUser(nextUser);
+      localStorage.setItem('auth_user', JSON.stringify(nextUser));
+      setProfileSuccess('프로필이 저장되었습니다.');
+      setProfileEditing(false);
+    } catch (err: unknown) {
+      setProfileError(err instanceof Error ? err.message : '저장에 실패했습니다.');
+    } finally {
+      setProfileLoading(false);
+    }
+  }, [currentUser, profileName, profileTeamId, profileRole, setCurrentUser]);
+
+  const currentTeam = teams.find(t => t.id === (profileEditing ? profileTeamId : currentUser?.teamId));
+
+  // ── Password ──────────────────────────────────────────────────────────────
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -39,6 +98,110 @@ function SettingsPage() {
 
   return (
     <div className={styles.page}>
+      {/* ── 프로필 ── */}
+      <div className={styles.section}>
+        <div className={styles.sectionHd}>
+          <div>
+            <h2 className={styles.sectionTitle}>내 프로필</h2>
+            <p className={styles.sectionDesc}>이름·소속 팀·역할을 확인하고 수정합니다.</p>
+          </div>
+          {!profileEditing && (
+            <button className="btn btn-ghost" onClick={startProfileEdit}>
+              <Icon name="edit" size={14} /> 수정
+            </button>
+          )}
+        </div>
+
+        {!profileEditing ? (
+          <div className={styles.profileView}>
+            <div
+              className={styles.profileAvatar}
+              style={{ background: currentTeam?.color ?? 'var(--text-3)' }}
+            >
+              {currentUser?.name?.slice(-2) ?? '?'}
+            </div>
+            <div className={styles.profileInfo}>
+              <div className={styles.profileName}>{currentUser?.name ?? '—'}</div>
+              <div className={styles.profileMeta}>
+                {currentTeam ? `${currentTeam.name} · ` : ''}{currentUser?.role ?? '—'}
+              </div>
+              <div className={styles.profileEmail}>{currentUser?.email ?? ''}</div>
+            </div>
+          </div>
+        ) : (
+          <form className={styles.form} onSubmit={handleProfileSave}>
+            <div className="field">
+              <label className="field-label">이름</label>
+              <input
+                className="input"
+                type="text"
+                placeholder="홍길동"
+                value={profileName}
+                onChange={e => setProfileName(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <div className="field">
+              <label className="field-label">소속 팀</label>
+              <div className={styles.teamGrid}>
+                {teams.map(t => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`${styles.teamChip} ${profileTeamId === t.id ? styles.teamChipActive : ''}`}
+                    onClick={() => setProfileTeamId(t.id)}
+                    style={{ '--team-color': t.color } as React.CSSProperties}
+                  >
+                    <span className={styles.teamDot} />
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <label className="field-label">역할</label>
+              <div className={styles.roleRow}>
+                {(['사원', '매니저', '팀장'] as const).map(r => (
+                  <button
+                    key={r}
+                    type="button"
+                    className={`${styles.roleChip} ${profileRole === r ? styles.roleChipActive : ''}`}
+                    onClick={() => setProfileRole(r)}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {profileError && (
+              <div className={styles.error}><Icon name="x" size={13} /> {profileError}</div>
+            )}
+            {profileSuccess && (
+              <div className={styles.successMsg}><Icon name="check" size={13} /> {profileSuccess}</div>
+            )}
+
+            <div className={styles.profileActions}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setProfileEditing(false)}
+                disabled={profileLoading}
+              >
+                취소
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={profileLoading}>
+                {profileLoading && <span className={styles.spinner} />}
+                {profileLoading ? '저장 중...' : '저장'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* ── 비밀번호 변경 ── */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>비밀번호 변경</h2>
         <p className={styles.sectionDesc}>현재 비밀번호를 확인한 후 새 비밀번호로 변경합니다.</p>

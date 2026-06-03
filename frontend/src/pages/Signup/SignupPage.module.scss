@@ -350,3 +350,24 @@
 
   &:hover { color: var(--brand); }
 }
+
+/* ── Teams loading/error ── */
+.teamsStatus {
+  font-size: 13px;
+  color: var(--text-3);
+  padding: 10px 0;
+}
+
+.retryBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--brand-strong);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover { color: var(--brand); }
+}
